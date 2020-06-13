@@ -60,10 +60,9 @@ static void uwsc_onmessage(struct uwsc_client *cl,
         puts("");
     } else {
         printf("[%.*s]\n", (int)len, (char *)data);
-        parse_buffer parsebuffer = { 0, 0, 0, 0, { 0, 0, 0 } };
-        parsebuffer.content = (const unsigned char*)data;
-        parsebuffer.length = strlen(data) + sizeof("");
-        parsebuffer.hooks = global_hooks;
+        cJSON *node = cJSON_PARSE(data);
+        cJSON *access_token = cJSON_GetStringValue("access_token");
+        printf("access_token is %s\n", access_token->valuestring);
     }
 
     printf("Please input:\n");
