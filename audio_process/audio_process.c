@@ -60,6 +60,10 @@ static void uwsc_onmessage(struct uwsc_client *cl,
         puts("");
     } else {
         printf("[%.*s]\n", (int)len, (char *)data);
+        parse_buffer parsebuffer = { 0, 0, 0, 0, { 0, 0, 0 } };
+        parsebuffer.content = (const unsigned char*)data;
+        parsebuffer.length = strlen(data) + sizeof("");
+        parsebuffer.hooks = global_hooks;
     }
 
     printf("Please input:\n");
