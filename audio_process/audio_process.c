@@ -65,6 +65,18 @@ static void uwsc_onmessage(struct uwsc_client *cl,
            printf("%s\n",url);
            iflyos_free(url);
        }
+       char *secure_url = iflyos_get_audio_secure_url(data);
+       if (secure_url)
+       {
+           printf("%s\n",secure_url);
+           iflyos_free(secure_url);
+       }
+       char *text = iflyos_get_meta_text(data);
+       if (text)
+       {
+           printf("%s\n",text);
+           iflyos_free(text);
+       }
     }
     printf("Please input:\n");
 }
