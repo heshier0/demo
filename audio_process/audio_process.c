@@ -62,9 +62,10 @@ static void uwsc_onmessage(struct uwsc_client *cl,
        //printf("[%.*s]\n", (int)len, (char *)data);
        
         cJSON *root = cJSON_Parse(data);
-        if (root)
+        if(root)
         {
-            cJSON_Print(root);
+            char* tree = cJSON_Print(root);
+            printf("%s\n", tree);
         }
         // int item_count = cJSON_GetArraySize(root);
         // printf("item count is %d\n", item_count);
