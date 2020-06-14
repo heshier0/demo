@@ -77,12 +77,12 @@ static void uwsc_onmessage(struct uwsc_client *cl,
                 continue;
             }
             cJSON *content = cJSON_Parse(p);
-            if (!response)
+            if (!content)
             {
                 continue;
             }
             cJSON *reponses = cJSON_GetObjectItem(content, "iflyos_reponses");
-            cJSON *res_item_count = cJSON_GetArraySize(reponses)
+            cJSON *res_item_count = cJSON_GetArraySize(reponses);
             for (int i = 0; i < res_item_count; i++)
             {
                 cJSON *res_item = cJSON_GetArrayItem(reponses, i);
@@ -96,7 +96,6 @@ static void uwsc_onmessage(struct uwsc_client *cl,
             }
         }
 
-   
         if(root)
         {
             cJSON_Delete(root);
