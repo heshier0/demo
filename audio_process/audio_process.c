@@ -62,6 +62,7 @@ static void uwsc_onmessage(struct uwsc_client *cl,
         printf("[%.*s]\n", (int)len, (char *)data);
         cJSON *root = cJSON_Parse(data);
         int item_count = cJSON_GetArraySize(root);
+        printf("item count is %d\n", item_count);
         for(int i = 0; i < item_count; i++)
         {
             cJSON *item = cJSON_GetArrayItem(root, i);
@@ -76,6 +77,7 @@ static void uwsc_onmessage(struct uwsc_client *cl,
                 printf("format json error\n");
                 continue;
             }
+            printf("%s\n", p);
             cJSON *content = cJSON_Parse(p);
             if (!content)
             {
