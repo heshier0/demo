@@ -27,7 +27,7 @@ char* iflyos_get_audio_url(const char* json_data)
     cJSON *root = cJSON_Parse(json_data);
     if(!root)
     {
-        return NULL
+        return NULL;
     }
     cJSON *responses = cJSON_GetObjectItem(root, IFLYOS_REPONSES);
     if (!responses)
