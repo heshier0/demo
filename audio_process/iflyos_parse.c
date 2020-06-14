@@ -116,7 +116,7 @@ release:
     return url;
 }
 
-char* iflyos_get_audio_meta_text(const char* json_data)
+char* iflyos_get_metadata_text(const char* json_data)
 {
     char* url = NULL;
     if(json_data == NULL)

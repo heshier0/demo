@@ -71,7 +71,7 @@ static void uwsc_onmessage(struct uwsc_client *cl,
            printf("%s\n",secure_url);
            iflyos_free(secure_url);
        }
-       char *text = iflyos_get_meta_text(data);
+       char *text = iflyos_get_metadata_text(data);
        if (text)
        {
            printf("%s\n",text);
