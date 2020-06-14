@@ -60,45 +60,13 @@ static void uwsc_onmessage(struct uwsc_client *cl,
         puts("");
     } else {
        //printf("[%.*s]\n", (int)len, (char *)data);
-       
-        cJSON *root = cJSON_Parse(data);
-        if(root)
-        {
-            char* tree = cJSON_Print(root);
-            printf("%s\n", tree);
-        }
-        cJSON *responses = cJSON_GetObjectItem(root, "iflyos_responses");
-        if (responses)
-        {
-            char *response = cJSON_Print(responses);
-            printf("%s\n", response);
-        }
-        
-        int item_count = cJSON_GetArraySize(responses);
-        printf("item count is %d\n", item_count);
-        for(int i = 0; i < item_count; i++)
-        {
-            cJSON *item = cJSON_GetArrayItem(responses, i);
-            if (!item)
-            {
-                printf("item is null\n");
-                continue;
-            }
-            cJSON *payload = cJSON_GetObjectItem(item, "payload");
-            cJSON *url = cJSON_GetObjectItem(payload, "url");
-            if (url)
-            {
-                printf("url is %s\n", url->valuestring);
-            }
-        }
-
-        if(root)
-        {
-            cJSON_Delete(root);
-            printf("json released OK\n");
-        }
+       char* url = iflyos_get_audio_url(data);
+       if (url)
+       {
+           printf("%s\n",url);
+           iflyos_free(url);
+       }
     }
-
     printf("Please input:\n");
 }
 
