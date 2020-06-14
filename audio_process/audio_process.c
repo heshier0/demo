@@ -62,11 +62,17 @@ static void uwsc_onmessage(struct uwsc_client *cl,
         printf("[%.*s]\n", (int)len, (char *)data);
         cJSON *root = cJSON_Parse(data);
         cJSON *responses = cJSON_GetObjectItem(root, "iflyos_responses");
-        cJSON *url = cJSON_GetObjectItem(responses, "url");
-        printf("url is %s\n", url->valuestring);
+        cJSON *payload = cJSON_GetObjectItem(responses, "payload");
+        cJSON *url = cJSON_GetObjectItem(payload, "url")
+        if (url)
+        {
+            printf("url is %s\n", url->valuestring);
+        }
+        
         if(root)
         {
             cJSON_Delete(root);
+            printf("json released OK\n");
         }
     }
 
