@@ -1,3 +1,4 @@
+#include <string.h>
 #include <cJSON.h>
 
 #define IFLYOS_REPONSES ("iflyos_responses")

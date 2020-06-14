@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include <uwsc.h>
-#include <cJSON.h>
 
 
 static void stdin_read_cb(struct ev_loop *loop, struct ev_io *w, int revents)
