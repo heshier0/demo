@@ -78,26 +78,29 @@ static void uwsc_onmessage(struct uwsc_client *cl,
                 continue;
             }
             printf("%s\n", p);
-            
-            cJSON *content = cJSON_Parse(p);
-            if (!content)
+            if(strstr(p, "iflyos_responses") != NULL)
             {
-                continue;
-            }
-            cJSON *res_item_count = cJSON_GetArraySize(content);
-            printf("res_item_count is %d\n", res_item_count);
-            for (int i = 0; i < res_item_count; i++)
-            {
-                cJSON *res_item = cJSON_GetArrayItem(content, i);
-                char *pres = cJSON_PrintUnformatted(res_item);
-                printf("in response:%s\n", pres);
-                cJSON *res_content = cJSON_Parse(pres);
-                cJSON *url = cJSON_GetObjectItem(res_content, "url");
-                if (url)
+                cJSON *content = cJSON_Parse(p);
+                if (!content)
                 {
-                    printf("url is %s\n", url);
+                    continue;
+                }
+                cJSON *res_item_count = cJSON_GetArraySize(content);
+                printf("res_item_count is %d\n", res_item_count);
+                for (int i = 0; i < res_item_count; i++)
+                {
+                    cJSON *res_item = cJSON_GetArrayItem(content, i);
+                    char *pres = cJSON_PrintUnformatted(res_item);
+                    printf("in response:%s\n", pres);
+                    cJSON *res_content = cJSON_Parse(pres);
+                    cJSON *url = cJSON_GetObjectItem(res_content, "url");
+                    if (url)
+                    {
+                        printf("url is %s\n", url->valuestring);
+                    }
                 }
             }
+            
         }
 
         if(root)
