@@ -61,6 +61,8 @@ static void uwsc_onmessage(struct uwsc_client *cl,
     } else {
         printf("[%.*s]\n", (int)len, (char *)data);
         cJSON *root = cJSON_Parse(data);
+        int item_count = cJSON_GetArraySize(root);
+        printf("%d items in json\n", item_count);
         cJSON *responses = cJSON_GetObjectItem(root, "iflyos_responses");
         cJSON *payload = cJSON_GetObjectItem(responses, "payload");
         cJSON *url = cJSON_GetObjectItem(payload, "url");
