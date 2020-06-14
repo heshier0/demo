@@ -46,7 +46,7 @@ static void uwsc_onopen(struct uwsc_client *cl)
 static void uwsc_onmessage(struct uwsc_client *cl,
 	void *data, size_t len, bool binary)
 {
-    printf("Recv:");
+    printf("Recv:\n");
 
     if (binary) {
         size_t i;
@@ -67,6 +67,13 @@ static void uwsc_onmessage(struct uwsc_client *cl,
             char* tree = cJSON_Print(root);
             printf("%s\n", tree);
         }
+        cJSON *responses = cJSON_GetObjectItem(root, "iflyos_responses");
+        if (responses)
+        {
+            char *response = cJSON_Print(responses);
+            printf("%s\n", response);
+        }
+        
         // int item_count = cJSON_GetArraySize(root);
         // printf("item count is %d\n", item_count);
         // for(int i = 0; i < item_count; i++)
