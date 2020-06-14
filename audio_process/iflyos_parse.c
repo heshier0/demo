@@ -47,9 +47,9 @@ char* iflyos_get_audio_url(const char* json_data)
         cJSON *value = cJSON_GetObjectItem(payload, IFLYOS_MP3_URL);
         if (value)
         {
-            int len = strlen(value);
+            int len = strlen(value->valuestring);
             url = malloc(len + 1);
-            memcpy(url, value, len);
+            memcpy(url, value->valuestring, len);
             url[len] = '\0';
             break;
         }
