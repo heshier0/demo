@@ -11,7 +11,7 @@ void iflyos_free(void* ptr)
     {
         return;
     }
-    frr(ptr);
+    free(ptr);
     ptr = NULL;
 
     return;
