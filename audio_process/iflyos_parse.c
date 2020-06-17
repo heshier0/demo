@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <cJSON.h>
 
 #define IFLYOS_REPONSES             ("iflyos_responses")

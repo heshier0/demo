@@ -39,7 +39,8 @@ static void uwsc_onopen(struct uwsc_client *cl)
     // cl->send_ex(cl, UWSC_OP_TEXT,
     //     2, strlen("hello,"), "hello,", strlen("server"), "server");
 
-    printf("Please input:\n");
+    //printf("Please input:\n");
+    iflyos_create_protol();
 }
 
 static void uwsc_onmessage(struct uwsc_client *cl,
@@ -58,7 +59,6 @@ static void uwsc_onmessage(struct uwsc_client *cl,
         }
         puts("");
     } else {
-       //printf("[%.*s]\n", (int)len, (char *)data);
        char* url = iflyos_get_audio_url(data);
        if (url)
        {
@@ -77,8 +77,11 @@ static void uwsc_onmessage(struct uwsc_client *cl,
            printf("%s\n",text);
            iflyos_free(text);
        }
+
+
     }
     printf("Please input:\n");
+
 }
 
 static void uwsc_onerror(struct uwsc_client *cl, int err, const char *msg)
@@ -145,7 +148,6 @@ int main(int argc, char **argv)
     sprintf(ifly_url, "wss://ivs.iflyos.cn/embedded/v1?token=%s&device_id=%s", token, device_id);
    
     cl = uwsc_new(loop, ifly_url, ping_interval, NULL);
-    //cl = uwsc_new(loop, "wss://ivs.iflyos.cn/embedded/v1?token=&device_id=", ping_interval, NULL);
     if (!cl)
         return -1;
 
