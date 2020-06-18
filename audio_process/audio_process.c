@@ -77,8 +77,6 @@ static void uwsc_onmessage(struct uwsc_client *cl,
            printf("%s\n",text);
            iflyos_free(text);
        }
-
-
     }
     printf("Please input:\n");
 

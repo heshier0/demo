@@ -27,8 +27,10 @@ LIBS            = -L/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/lib -l
                   -L/mnt/g/workspace/plugins/openssl/lib -lssl \
                   -L/mnt/g/workspace/plugins/openssl/lib -lcrypto
 
-CFLAGS          = -DLINUX -Wno-multichar -fPIC -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer
-CPPFLAGS        = -DLINUX -Wno-multichar -fPIC -std=c++11 -fexceptions -fpermissive -w -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer
+CFLAGS          = -DLINUX -Wno-multichar -Wimplicit-function-declaration \
+                  -fPIC -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer 
+CPPFLAGS        = -DLINUX -Wno-multichar -Wimplicit-function-declaration \
+                  -fPIC -std=c++11 -fexceptions -fpermissive -w -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer
 
 
 DEBUG_FLAGS     = -fexceptions -finstrument-functions -funwind-tables -g -rdynamic -O0
