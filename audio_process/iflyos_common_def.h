@@ -14,18 +14,19 @@
 #pragma pack(push, 1)
 typedef struct iflyos_header
 {
-    char* authorization;            //must
-    char* device_id;                 //must
-    char* device_ip;             
+    char token_type[8];                
+    char authorization[64];          //must
+    char device_id[20];                 //must
+    char device_ip[16];             
     float latitude;
     float longitude;
-    char* platform_name;             //must
-    char* platform_version;          //must
+    char platform_name[8];             //must
+    char platform_version[6];          //must
 }FlyosHeader;
 
 typedef struct iflyos_context_system
 {
-    char* version;                    //must
+    char version[6];                    //must
     BOOL software_updater;
     BOOL power_controller;
     BOOL device_modes;
@@ -35,41 +36,41 @@ typedef struct iflyos_context_system
 
 typedef struct iflyos_context_audio_player
 {
-    char* version;    //must
-    char* state;      // "PLAYING | IDLE | PAUSED" //must
-    char* resource_id;   
+    char version[6];    //must
+    char state[8];      // "PLAYING | IDLE | PAUSED" //must
+    char resource_id[64];   
     int offset;         //millesecond
 }FLyosContextAudioPlayer;
 
 typedef struct iflyos_context_recognizer
 {
-    char* version;
+    char version[6];
 }FlyosContextRecognizer;
 
 //属性保留
 //若需要使用相应功能，则作为结构体成员加入FlyosContext
 typedef struct iflyos_context_speaker
 {
-    char* version;    //must
+    char version[6];    //must
     int volume;         //must
-    char type;
+    char type[8];
 }FlyosContextSpeaker;
 
 typedef struct iflyos_context_alarm
 {
-    char* version;    //must
+    char version[6];    //must
     int local_alarm[5]; //
-    char* local_alarm_id;  
+    char local_alarm_id[32];  
     long stamp;
-    char* active_alarm_id;
+    char active_alarm_id[32];
 }FlyosContextAlarm;
 
 typedef struct iflyos_context_screen
 {
-    char* version;
-    char* state; // "ON" | "OFF"
+    char version[6];
+    char state[4]; // "ON" | "OFF"
     long brightness;
-    char* type; // "percent"
+    char type[8]; // "percent"
 }FlyosContextScreen;
 
 /*
@@ -87,40 +88,40 @@ custom_template
 */
 typedef struct iflyos_context_template
 {
-    char* version;
+    char version[6];
     BOOL focused;
-    char* type;
+    char type[32];
 }FlyosContextTemplate;
 
 typedef struct iflyos_context_video_player
 {
-    char* version;
-    char* state;  // "IDLE" | "PLAYING" | "PAUSED"
-    char* resource_id;
+    char version[6];
+    char state[8];  // "IDLE" | "PLAYING" | "PAUSED"
+    char resource_id[64];
     long offset;
 }FlyosContextVideoPlayer;
 
 typedef struct  iflyos_context_app_action
 {
-    char* version;
-    char** suppored; // "activity" | "broadcast" | "service" | "exit"
-    char* foreground_app;
-    char* activity;
+    char version[6];
+    char suppored[16]; // "activity" | "broadcast" | "service" | "exit"
+    char foreground_app[256];
+    char activity[256];
 }FlyosContextAppAction;
 
 typedef struct iflyos_context_playback_controller
 {
-    char* version;
+    char version[6];
 }FlyosContextPlaybackController;
 
 typedef struct iflyos_context_launcher
 {
-    char* version; 
+    char version[6]; 
 }FlyosContextLauncher;
 
 typedef struct iflyos_context_interceptor
 {
-    char* version;
+    char version[6];
 }FlyosContextInterceptor;
 //
 
@@ -135,8 +136,8 @@ typedef struct iflyos_context
 
 typedef struct iflyos_meta
 {
-    char* trace_id;
-    char* request_id;
+    char trace_id[64];
+    char request_id[64];
     BOOL is_last;
 }FlyosMeta;
 

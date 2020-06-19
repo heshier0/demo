@@ -7,7 +7,7 @@
 //intermediate text
 typedef struct iflyos_recog_it_response
 {
-    char* header;
+    char header[64];
     char* text;
     BOOL is_last;
 }FlyosRecogITResponse;
@@ -15,8 +15,8 @@ typedef struct iflyos_recog_it_response
 //expect reply
 typedef struct iflyos_recog_er_response
 {
-    char* header;
-    char* reply_key;
+    char header[64];
+    char reply_key[64];
     BOOL bg_recognize;
     long timeout;
 }FlyosRecogERResponse;
@@ -24,24 +24,24 @@ typedef struct iflyos_recog_er_response
 //evaluate reply
 typedef struct iflyos_recog_ev_response
 {
-    char* header;
+    char header[64];
     int code;
-    char* description;
-    char* sid;
+    char description[32];
+    char sid[64];
     char* data;
 }FlyosRecogEVRespons;
 
 //ping
 typedef struct iflyos_sys_ping_response
 {
-    char* header;
+    char header[64];
     long timestam;
 }FlyosSysPingResponse;
 
 //error
 typedef struct iflyos_sys_error_response
 {
-    char* header;
+    char header[64];
     int code;      
     char* message;
 }FlyosSysErrorResponse;
@@ -57,7 +57,7 @@ typedef struct iflyos_sys_modes_response
 //audio player
 typedef struct iflyos_audio_out_response
 {
-    char* header;
+    char header[64];
     char* type;
     char* control;
     char* behavior;

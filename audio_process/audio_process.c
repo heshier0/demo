@@ -134,14 +134,22 @@ int main(int argc, char **argv)
         }
     }
 
-	uwsc_log_info("Haoxuetong: %s\n", UWSC_VERSION_STRING);
+    iflyos_load_cfg();
+    char* device_id = iflyos_get_device_id();
+    char* token = iflyos_get_token();
+
+	uwsc_log_info("Haoxuetong: %s\n", "1.0.0");
+
 
     char ifly_url[255] = {0};
-    const char* token = "WKAeL95n1ZNgsxNOmHf0upvkmq58MJKgl30aqEhIkOZfL_IL9lMUbGprmSmGjY3A";
-    const char* device_id = "HXT20200607P";
+    // const char* token = "WKAeL95n1ZNgsxNOmHf0upvkmq58MJKgl30aqEhIkOZfL_IL9lMUbGprmSmGjY3A";
+    // const char* device_id = "HXT20200607P";
     uwsc_log_info("token: %s\n", token);
     uwsc_log_info("device_id: %s\n", device_id);
     sprintf(ifly_url, "wss://ivs.iflyos.cn/embedded/v1?token=%s&device_id=%s", token, device_id);
+
+    iflyos_free(device_id);
+    iflyos_free(token);
    
     cl = uwsc_new(loop, ifly_url, ping_interval, NULL);
     if (!cl)

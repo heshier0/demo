@@ -5,6 +5,10 @@
 
 #include "iflyos_common_def.h"
 
+#define IFLYOS_CFG        "/user/config/iflyos_config.json"
+
+static cJSON* g_cfg_root  = NULL;     //指向配置文件的Object
+
 void iflyos_destroy_header(FlyosHeader* header)
 {
     if (NULL == header)
@@ -13,6 +17,8 @@ void iflyos_destroy_header(FlyosHeader* header)
     }
     free(header);
     header = NULL;
+
+    return;
 }
 
 void iflyos_destroy_context(FlyosContext* context)
@@ -38,6 +44,158 @@ void iflyos_destroy_context(FlyosContext* context)
     context = NULL;
 
     return;
+}
+
+void iflyos_load_cfg()
+{
+    FILE *file = NULL;
+    long length = 0;
+    char* content = NULL;
+    size_t read_chars = 0;
+
+    //以2进制方式打开
+    file = fopen(IFLYOS_CFG, "rb");
+    if (NULL == file)
+    {
+        goto CLEANUP;
+    }
+    //获取长度
+    if (fseek(file, 0, SEEK_END) != 0)
+    {
+        goto CLEANUP;
+    }
+    length = ftell(file);
+    if (length < 0)
+    {
+        goto CLEANUP;
+    }
+    if (fseek(file, 0, SEEK_SET) != 0)
+    {
+        goto CLEANUP;
+    }
+    //分配内存
+    content = (char*)malloc((size_t)length + sizeof(""));
+    if (NULL == content)
+    {
+        goto CLEANUP;
+    }
+    //读取文件
+    read_chars = fread(content, sizeof(char), (size_t)length, file);
+    if ((long)read_chars != length)
+    {
+        free(content);
+        content = NULL;
+        goto CLEANUP;
+    }
+    content[read_chars] = '\0';
+    g_cfg_root = cJSON_Parse(content);
+    if (NULL == g_cfg_root)
+    {
+        return NULL;
+    }
+
+    if(content != NULL)
+    {
+        free(content);
+        content = NULL;
+    }
+
+CLEANUP:
+    if (file != NULL)
+    {
+        fclose(file);
+    }    
+
+    return;
+}
+
+static char* iflyos_get_cfg_value(const char* node_item, const char* sub_item)
+{
+    char* item_value = NULL;
+    if (NULL == node_item || NULL == sub_item)
+    {
+        return NULL;
+    }
+   
+    cJSON *params = cJSON_GetObjectItem(g_cfg_root, node_item);
+    if (!params)
+    {
+        return NULL;
+    }
+    cJSON *value = cJSON_GetObjectItem(params, sub_item);
+
+
+    // int item_count = cJSON_GetArraySize(params);
+    // for(int i = 0; i < item_count; i++)
+    // {
+    //     cJSON *item = cJSON_GetArrayItem(params, i);
+    //     if (!item)
+    //     {
+    //         continue;
+    //     }
+    //     cJSON *value = cJSON_GetObjectItem(item, sub_item);
+        if (value)
+        {
+            int len = strlen(value->valuestring);
+            item_value = malloc(len + 1);
+            memcpy(item_value, value->valuestring, len);
+            item_value[len] = '\0';
+            // break;
+        }
+    // }
+
+    return item_value;
+}
+
+char* iflyos_get_device_id()
+{
+    return iflyos_get_cfg_value("device_params", "device_id");
+
+    /* 
+    if(NULL == g_cfg_root)
+    {
+        return NULL;
+    }
+
+    cJSON* device_params = cJSON_GetObjectItem(g_cfg_root, "device_params");
+    if(NULL == device_params)
+    {
+        return NULL;
+    }
+
+    return cJSON_GetObjectItem(device_params, "device_id");
+    */
+}   
+
+char* iflyos_get_token()
+{
+
+    return iflyos_get_cfg_value("device_auth", "access_token");
+    // if(NULL == g_cfg_root)
+    // {
+    //     return NULL;
+    // }
+
+    // cJSON* device_params = cJSON_GetObjectItem(g_cfg_root, "device_auth");
+    // if(NULL == device_params)
+    // {
+    //     return NULL;
+    // }
+
+    // return cJSON_GetObjectItem(device_params, "access_token");
+}
+
+
+
+void iflyos_init_header(FlyosHeader* header)
+{
+    if (NULL == header)
+    {
+        printf("init header error\n");
+        return;
+    }
+    
+    
 }
 
 cJSON* iflyos_create_header(FlyosHeader* header)
@@ -70,7 +228,6 @@ cJSON* iflyos_create_header(FlyosHeader* header)
 
     return root;
 }
-
 
 
 cJSON* iflyos_create_context(FlyosContext* context)
