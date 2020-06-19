@@ -18,14 +18,18 @@ INCS            = -I$(PROJ_PATH)/. \
                   -I/mnt/g/workspace/plugins/libev/include \
                   -I/mnt/g/workspace/plugins/libuwsc/include \
                   -I/mnt/g/workspace/plugins/cjson/include    \
-                  -I/mnt/g/workspace/plugins/openssl/include             
+                  -I/mnt/g/workspace/plugins/libhttpclient/include \
+                  -I/mnt/g/workspace/plugins/openssl/include 
+                               
 
 LIBS            = -L/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/lib -lm -ldl -pthread \
                   -L/mnt/g/workspace/plugins/libev/lib -lev \
                   -L/mnt/g/workspace/plugins/libuwsc/lib -luwsc \
                   -L/mnt/g/workspace/plugins/cjson/lib -lcjson \
+                  -L/mnt/g/workspace/plugins/libhttpclient/lib -lhttpclient \
                   -L/mnt/g/workspace/plugins/openssl/lib -lssl \
                   -L/mnt/g/workspace/plugins/openssl/lib -lcrypto
+                  
 
 CFLAGS          = -DLINUX -Wno-multichar -Wimplicit-function-declaration \
                   -fPIC -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer 
@@ -48,9 +52,9 @@ BIN_SUFFIX      = $(suffix $(BIN))
 
 SRCS            = *.c
 OBJS            = *.o
-BULID_CMD       = $(CC) -o $(PROJ_PATH)/$(BIN) $(OBJS) $(LIBS)
+BULID_CMD       = $(CC) -o $(BIN) $(OBJS) $(LIBS)
 INSTALL_CMD     = $(STRIP) $(BIN)
-CLEAN_CMD       = rm -f $(PROJ_PATH)/$(BIN) $(COBJS) 
+CLEAN_CMD       = rm -f $(BIN) $(OBJS) 
 
 all : $(BIN)
 

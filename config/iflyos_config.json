@@ -1,0 +1,39 @@
+{
+  "device_params" :
+  {
+    "client_id" : "90d84841-c7cf-4ef9-96a6-03c9bbdf1a45",
+    "device_id" : "HXT20200607P",
+    "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+  	"device_code": "XhPJF3v_ZN36M1zxc_j15g_NepjfnMb4gxwWDNCAs3cRCMuCCLwPUahkG2QgHwNn"
+  },
+
+  "device_auth" :
+  {
+    "token_type":"bearer",
+    "refresh_token":"CTSi8SKIsXCfnlWDWtAMngO4QquUZ5ckXM3iEtRuzUI3ytxzcq0Flf_r3W2ilbze",
+    "expires_in":8640000,
+    "created_at":1591516071,
+    "access_token":"WKAeL95n1ZNgsxNOmHf0upvkmq58MJKgl30aqEhIkOZfL_IL9lMUbGprmSmGjY3A"
+  },
+
+  "platform_params" :
+  {
+    "name" : "linux",
+    "version" : "1.0.0"
+  },
+
+  "system_params" :
+  {
+    "version" : "1.3",
+    "software_updater" : false,
+    "power_controller" : false,
+    "device_modes" : false,
+    "reboot" : false
+  },
+
+  "audio_player" :
+  {
+    "version" : "1.2"
+    "state" : "IDLE"
+  },
+}

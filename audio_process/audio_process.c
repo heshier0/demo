@@ -6,6 +6,7 @@
 
 #include <uwsc.h>
 
+#include "iflyos_defines.h"
 
 static void stdin_read_cb(struct ev_loop *loop, struct ev_io *w, int revents)
 {
@@ -40,7 +41,6 @@ static void uwsc_onopen(struct uwsc_client *cl)
     //     2, strlen("hello,"), "hello,", strlen("server"), "server");
 
     //printf("Please input:\n");
-    iflyos_create_protol();
 }
 
 static void uwsc_onmessage(struct uwsc_client *cl,
@@ -58,32 +58,23 @@ static void uwsc_onmessage(struct uwsc_client *cl,
                 puts("");
         }
         puts("");
-    } else {
+    } 
+    else 
+    {
         char* name = iflyos_get_response_name(data);
-        if(name)
+        if(name && (strcmp(name, aplayer_audio_out) == 0) )
         {
-            printf("%s\n",name);
-           iflyos_free(name);
+            char* url = iflyos_get_audio_url(data);
+            if(NULL == url)
+            {
+                iflyos_free(name);
+                return;
+            }
+            printf("To download...\n");
+            iflyos_download_file(url); 
+            iflyos_free(name);
+            iflyos_free(url);
         }
-
-       char* url = iflyos_get_audio_url(data);
-       if (url)
-       {
-           printf("%s\n",url);
-           iflyos_free(url);
-       }
-       char *secure_url = iflyos_get_audio_secure_url(data);
-       if (secure_url)
-       {
-           printf("%s\n",secure_url);
-           iflyos_free(secure_url);
-       }
-       char *text = iflyos_get_payload_metadata_text(data);
-       if (text)
-       {
-           printf("%s\n",text);
-           iflyos_free(text);
-       }
     }
     printf("Please input:\n");
 
