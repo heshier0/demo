@@ -105,11 +105,6 @@ cJSON* iflyos_create_context(FlyosContext* context)
     return root;
 }
 
-void iflyos_create_request()
-{
-
-}
-
 void iflyos_create_protol()
 {
     cJSON *root = NULL;
@@ -118,7 +113,7 @@ void iflyos_create_protol()
     FlyosHeader *header = (FlyosHeader *)malloc(sizeof(FlyosHeader));
     memset(header, 0, sizeof(FlyosHeader));
     
-    strcpy(header->authorization, "WKAeL95n1ZNgsxNOmHf0upvkmq58MJKgl30aqEhIkOZfL_IL9lMUbGprmSmGjY3A");
+    strcpy(header->authorization, "bearer WKAeL95n1ZNgsxNOmHf0upvkmq58MJKgl30aqEhIkOZfL_IL9lMUbGprmSmGjY3A");
     strcpy(header->device_id, "HXT20200607P");
     strcpy(header->platform_name, "linux");
     strcpy(header->platform_version, "1.0.0");

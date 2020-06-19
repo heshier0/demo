@@ -4,6 +4,8 @@
 #include <cJSON.h>
 
 #define IFLYOS_REPONSES             ("iflyos_responses")
+#define IFLYOS_HEADER               ("header")
+#define IFLYOS_HEADER_NAME          ("name")
 #define IFLYOS_PAYLOAD              ("payload")
 #define IFLYOS_METADATA             ("metadata")
 #define IFLYOS_META_TEXT            ("text")
@@ -23,13 +25,14 @@ void iflyos_free(void* ptr)
     return;
 }
 
-char* iflyos_get_audio_url(const char* json_data)
+static char* iflyos_get_response_value(const char* json_data, const char* item_name, const char* sub_name, const char* last_node)
 {
-    char* url = NULL;
-    if(json_data == NULL)
+    char* name = NULL;
+    if(NULL == json_data || NULL == item_name || NULL == sub_name)
     {
         return NULL;
     }
+
     cJSON *root = cJSON_Parse(json_data);
     if(!root)
     {
@@ -40,7 +43,7 @@ char* iflyos_get_audio_url(const char* json_data)
     {
         goto release;
     }
-    
+
     int item_count = cJSON_GetArraySize(responses);
     for(int i = 0; i < item_count; i++)
     {
@@ -49,14 +52,24 @@ char* iflyos_get_audio_url(const char* json_data)
         {
             continue;
         }
-        cJSON *payload = cJSON_GetObjectItem(item, IFLYOS_PAYLOAD);
-        cJSON *value = cJSON_GetObjectItem(payload, IFLYOS_MP3_URL);
+        cJSON *header = cJSON_GetObjectItem(item, item_name);
+        cJSON *value= NULL;
+        if(NULL == last_node)
+        {
+            value = cJSON_GetObjectItem(header, sub_name);
+        }
+        else
+        {
+            cJSON* sub_value = cJSON_GetObjectItem(header, sub_name);
+            value = cJSON_GetObjectItem(sub_value, last_node);
+        }
+        
         if (value)
         {
             int len = strlen(value->valuestring);
-            url = malloc(len + 1);
-            memcpy(url, value->valuestring, len);
-            url[len] = '\0';
+            name = malloc(len + 1);
+            memcpy(name, value->valuestring, len);
+            name[len] = '\0';
             break;
         }
     }
@@ -67,60 +80,31 @@ release:
         cJSON_Delete(root);
     }
 
-    return url;
+    return name;
+}
+
+char* iflyos_get_response_name(const char* json_data)
+{
+    return iflyos_get_response_value(json_data, IFLYOS_HEADER, IFLYOS_HEADER_NAME, NULL);
+}
+
+char* iflyos_get_audio_url(const char* json_data)
+{
+    return iflyos_get_response_value(json_data, IFLYOS_PAYLOAD, IFLYOS_MP3_URL, NULL);
 }
 
 char* iflyos_get_audio_secure_url(const char* json_data)
 {
-    char* url = NULL;
-    if(json_data == NULL)
-    {
-        return NULL;
-    }
-    cJSON *root = cJSON_Parse(json_data);
-    if(!root)
-    {
-        return NULL;
-    }
-    cJSON *responses = cJSON_GetObjectItem(root, IFLYOS_REPONSES);
-    if (!responses)
-    {
-        goto release;
-    }
-    
-    int item_count = cJSON_GetArraySize(responses);
-    for(int i = 0; i < item_count; i++)
-    {
-        cJSON *item = cJSON_GetArrayItem(responses, i);
-        if (!item)
-        {
-            continue;
-        }
-        cJSON *payload = cJSON_GetObjectItem(item, IFLYOS_PAYLOAD);
-        cJSON *value = cJSON_GetObjectItem(payload, IFLYOS_MP3_SECURE_URL);
-        if (value)
-        {
-            int len = strlen(value->valuestring);
-            url = malloc(len + 1);
-            memcpy(url, value->valuestring, len);
-            url[len] = '\0';
-            break;
-        }
-    }
-
-release:
-    if(root)
-    {
-        cJSON_Delete(root);
-    }
-
-    return url;
+    return iflyos_get_response_value(json_data, IFLYOS_PAYLOAD, IFLYOS_MP3_SECURE_URL, NULL);
 }
 
-char* iflyos_get_metadata_text(const char* json_data)
+
+char* iflyos_get_payload_metadata_text(const char* json_data)
 {
+    return iflyos_get_response_value(json_data, IFLYOS_PAYLOAD, IFLYOS_METADATA, IFLYOS_META_TEXT);
+    /*
     char* url = NULL;
-    if(json_data == NULL)
+    if(NULL == json_data)
     {
         return NULL;
     }
@@ -163,4 +147,5 @@ release:
     }
 
     return url;
+    */
 }

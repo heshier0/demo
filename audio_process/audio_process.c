@@ -59,6 +59,13 @@ static void uwsc_onmessage(struct uwsc_client *cl,
         }
         puts("");
     } else {
+        char* name = iflyos_get_response_name(data);
+        if(name)
+        {
+            printf("%s\n",name);
+           iflyos_free(name);
+        }
+
        char* url = iflyos_get_audio_url(data);
        if (url)
        {
@@ -71,7 +78,7 @@ static void uwsc_onmessage(struct uwsc_client *cl,
            printf("%s\n",secure_url);
            iflyos_free(secure_url);
        }
-       char *text = iflyos_get_metadata_text(data);
+       char *text = iflyos_get_payload_metadata_text(data);
        if (text)
        {
            printf("%s\n",text);

@@ -1,5 +1,7 @@
-#include <stdlib.h>
-#include <string.h>
+#ifndef __IFLYOS_COMMON_DEF_H__
+#define __IFLYOS_COMMON_DEF_H__
+
+#include "config.h"
 
 /*********************************************
  * {
@@ -8,12 +10,8 @@
  * "iflyos_request" : {}
  * }
  *********************************************/
-typedef enum
-{
-    TRUE = 1, 
-    FALSE = 0
-} BOOL;
 
+#pragma pack(push, 1)
 typedef struct iflyos_header
 {
     char authorization[255];            //must
@@ -130,5 +128,18 @@ typedef struct iflyos_context
 {
     FlyosContextSystem* system;
     FLyosContextAudioPlayer* audio_player;
+    FlyosContextRecognizer* recognizer;
+
 }FlyosContext;
 
+
+typedef struct iflyos_meta
+{
+    char* trace_id;
+    char* request_id;
+    BOOL is_last;
+}FlyosMeta;
+
+#pragma pack(pop)
+
+#endif //__IFLYOS_COMMON_DEF_H__
