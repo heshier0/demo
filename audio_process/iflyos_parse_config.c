@@ -110,7 +110,7 @@ void iflyos_reload_cfg()
     }
     
     fwrite(content, strlen(content), 1, fp);
-    fclose(fp)
+    fclose(fp);
   
     free(content);
     content = NULL;
@@ -159,7 +159,7 @@ static double iflyos_get_cfg_number_cfg(const char* params_item, const char* pro
     cJSON *prop_node = cJSON_GetObjectItem(params_node, prop_item);
     if (!prop_node)
     {
-        return 0
+        return 0;
     }
     
     return cJSON_GetNumberValue(prop_node);
@@ -264,18 +264,18 @@ static BOOL iflyos_set_cfg_str_value(const char* params_item, const char* prop_i
     char* prop_item_val = NULL;
     if (NULL == params_item || NULL == prop_item)
     {
-        return NULL;
+        return FALSE;
     }
    
     cJSON *params_node = cJSON_GetObjectItem(g_cfg_root, params_item);
     if (!params_node)
     {
-        return NULL;
+        return FALSE;
     }
     cJSON *prop_node = cJSON_GetObjectItem(params_node, prop_item);
-    if(prop_node == NULL)
+    if(!prop_node)
     {
-        return NULL;
+        return FALSE;
     }
     
     if (cJSON_SetValuestring(prop_node, value) == NULL)
