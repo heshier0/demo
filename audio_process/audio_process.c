@@ -78,6 +78,7 @@ static void uwsc_onmessage(struct uwsc_client *cl,
     }
     printf("Please input:\n");
     char *buf = iflyos_create_audio_in_request();
+    printf("%s\n", buf);
     cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
     free(buf);
 }
