@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cJSON.h>
 
+#include <iflyos_common_def.h>
 
 void iflyos_destroy_header(FlyosHeader* header)
 {
