@@ -172,6 +172,8 @@ void iflyos_create_protol()
 {
     cJSON *root = NULL;
 
+    iflyos_create_init_header();
+    iflyos_create_init_context();
     cJSON* header_node = iflyos_create_header(inited_header);
     cJSON* context_node = iflyos_create_context(inited_context);
     
