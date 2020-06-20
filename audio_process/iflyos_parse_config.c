@@ -62,7 +62,7 @@ void iflyos_load_cfg()
     g_cfg_root = cJSON_Parse(content);
     if (NULL == g_cfg_root)
     {
-        return NULL;
+        return;
     }
 
     if(content != NULL)
@@ -422,22 +422,22 @@ BOOL iflyos_set_system_version(const char* value)
 
 BOOL iflyos_set_system_sw_updater_state(const BOOL value)
 {
-    return (BOOL)iflyos_set_cfg_number_cfg(SYSTEM_PARAMS, "software_updater", value);
+    return (BOOL)iflyos_set_cfg_number_value(SYSTEM_PARAMS, "software_updater", value);
 }
 
 BOOL iflyos_set_system_power_ctrl_state(const BOOL value)
 {
-    return (BOOL)iflyos_set_cfg_number_cfg(SYSTEM_PARAMS, "power_controller", value);
+    return (BOOL)iflyos_set_cfg_number_value(SYSTEM_PARAMS, "power_controller", value);
 }
 
 BOOL iflyos_set_system_device_modes_state(const BOOL value)
 {
-    return (BOOL)iflyos_set_cfg_number_cfg(SYSTEM_PARAMS, "device_modes", value);
+    return (BOOL)iflyos_set_cfg_number_value(SYSTEM_PARAMS, "device_modes", value);
 }
 
 BOOL iflyos_set_system_reboot_state(const BOOL value)
 {
-    return (BOOL)iflyos_set_cfg_number_cfg(SYSTEM_PARAMS, "reboot", value);
+    return (BOOL)iflyos_set_cfg_number_value(SYSTEM_PARAMS, "reboot", value);
 }
 
 BOOL iflyos_set_audio_version(const char* value)
