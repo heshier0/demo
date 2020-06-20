@@ -40,13 +40,13 @@ void iflyos_create_init_context()
     memset(inited_context, 0, sizeof(FlyosContext));
 
     FlyosContextSystem context_system;
-    memset(context_system, 0, sizeof(FlyosContextSystem));
+    memset(&context_system, 0, sizeof(FlyosContextSystem));
     char* sys_version = iflyos_get_system_version();
     strcpy(context_system.version, sys_version);
     free(sys_version);
 
     FLyosContextAudioPlayer audio_player;
-    memset(audio_player, 0, sizeof(FLyosContextAudioPlayer));
+    memset(&audio_player, 0, sizeof(FLyosContextAudioPlayer));
     char* audio_version = iflyos_get_audio_version();
     char* audio_state = iflyos_get_audio_state();
     strcpy(audio_player.version, audio_version);
