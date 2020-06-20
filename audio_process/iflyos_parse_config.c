@@ -1,50 +1,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/time.h>
+
 #include <cJSON.h>
 
 #include "iflyos_common_def.h"
 
-#define IFLYOS_CFG        "/user/config/iflyos_config.json"
+#define IFLYOS_CFG          "/user/config/iflyos_config.json"
+#define DEVICE_PARAMS       "device_params"
+#define DEVICE_AUTH         "device_auth"
+#define PLATFORM_PARAMS     "platform_params"
+#define SYSTEM_PARAMS       "system_params"
+#define AUDIO_PLAYER        "audio_player"
+
 
 static cJSON* g_cfg_root  = NULL;     //指向配置文件的Object
-
-void iflyos_destroy_header(FlyosHeader* header)
-{
-    if (NULL == header)
-    {
-        return;
-    }
-    free(header);
-    header = NULL;
-
-    return;
-}
-
-void iflyos_destroy_context(FlyosContext* context)
-{
-    if(NULL == context)
-    {
-        return;
-    }
-   
-    if(context->system != NULL)
-    {
-        free(context->system);
-        context->system = NULL;
-    }
-    
-    if(context->audio_player != NULL)
-    {
-        free(context->audio_player);
-        context->audio_player = NULL;
-    }
-
-    free(context);
-    context = NULL;
-
-    return;
-}
 
 void iflyos_load_cfg()
 {
@@ -109,214 +80,380 @@ CLEANUP:
     return;
 }
 
-static char* iflyos_get_cfg_value(const char* node_item, const char* sub_item)
+void iflyos_unload_cfg()
 {
-    char* item_value = NULL;
-    if (NULL == node_item || NULL == sub_item)
+    if (g_cfg_root != NULL)
+    {
+        cJSON_Delete(g_cfg_root);
+        g_cfg_root = NULL;
+    }
+
+    return;
+}
+
+void iflyos_reload_cfg()
+{
+    if (NULL == g_cfg_root)
+    {
+        return;
+    }
+    char* content = cJSON_Print(g_cfg_root);
+    if(NULL == content)
+    {
+        return;
+    }
+
+    FILE *fp = fopen(IFLYOS_CFG, "w+");
+    if (fp == NULL)
+    {
+        return;
+    }
+    
+    fwrite(content, strlen(content), 1, fp);
+    fclose(fp)
+  
+    free(content);
+    content = NULL;
+
+    return;
+}
+
+static char* iflyos_get_cfg_str_value(const char* params_item, const char* prop_item)
+{
+    char* prop_item_val = NULL;
+    if (NULL == params_item || NULL == prop_item)
     {
         return NULL;
     }
    
-    cJSON *params = cJSON_GetObjectItem(g_cfg_root, node_item);
-    if (!params)
+    cJSON *params_node = cJSON_GetObjectItem(g_cfg_root, params_item);
+    if (!params_node)
     {
         return NULL;
     }
-    cJSON *value = cJSON_GetObjectItem(params, sub_item);
+    cJSON *prop_node = cJSON_GetObjectItem(params_node, prop_item);
+    if (prop_node)
+    {
+        int len = strlen(prop_node->valuestring);
+        prop_item_val = malloc(len + 1);
+        memcpy(prop_item_val, prop_node->valuestring, len);
+        prop_item_val[len] = '\0';
+    }
 
+    return prop_item_val;
+}
 
-    // int item_count = cJSON_GetArraySize(params);
-    // for(int i = 0; i < item_count; i++)
-    // {
-    //     cJSON *item = cJSON_GetArrayItem(params, i);
-    //     if (!item)
-    //     {
-    //         continue;
-    //     }
-    //     cJSON *value = cJSON_GetObjectItem(item, sub_item);
-        if (value)
-        {
-            int len = strlen(value->valuestring);
-            item_value = malloc(len + 1);
-            memcpy(item_value, value->valuestring, len);
-            item_value[len] = '\0';
-            // break;
-        }
-    // }
+//return double,change type what you need 
+static double iflyos_get_cfg_number_cfg(const char* params_item, const char* prop_item)
+{
+    if (NULL == params_item || NULL == prop_item)
+    {
+        return 0;
+    }
+   
+    cJSON *params_node = cJSON_GetObjectItem(g_cfg_root, params_item);
+    if (!params_node)
+    {
+        return 0;
+    }
+    cJSON *prop_node = cJSON_GetObjectItem(params_node, prop_item);
+    if (!prop_node)
+    {
+        return 0
+    }
+    
+    return cJSON_GetNumberValue(prop_node);
+}
 
-    return item_value;
+char* iflyos_get_client_id()
+{
+    return iflyos_get_cfg_str_value(DEVICE_PARAMS, "client_id");
+}
+
+char* iflyos_get_grant_type()
+{
+    return iflyos_get_cfg_str_value(DEVICE_PARAMS, "grant_type");
+}
+
+char* iflyos_get_device_code()
+{
+    return iflyos_get_cfg_str_value(DEVICE_PARAMS, "device_code");
 }
 
 char* iflyos_get_device_id()
 {
-    return iflyos_get_cfg_value("device_params", "device_id");
-
-    /* 
-    if(NULL == g_cfg_root)
-    {
-        return NULL;
-    }
-
-    cJSON* device_params = cJSON_GetObjectItem(g_cfg_root, "device_params");
-    if(NULL == device_params)
-    {
-        return NULL;
-    }
-
-    return cJSON_GetObjectItem(device_params, "device_id");
-    */
+    return iflyos_get_cfg_str_value(DEVICE_PARAMS, "device_id");
 }   
+
+char* iflyos_get_token_type()
+{
+    return iflyos_get_cfg_str_value(DEVICE_AUTH, "token_type");
+}
 
 char* iflyos_get_token()
 {
-
-    return iflyos_get_cfg_value("device_auth", "access_token");
-    // if(NULL == g_cfg_root)
-    // {
-    //     return NULL;
-    // }
-
-    // cJSON* device_params = cJSON_GetObjectItem(g_cfg_root, "device_auth");
-    // if(NULL == device_params)
-    // {
-    //     return NULL;
-    // }
-
-    // return cJSON_GetObjectItem(device_params, "access_token");
+    return iflyos_get_cfg_str_value(DEVICE_AUTH, "access_token");
 }
 
-
-
-void iflyos_init_header(FlyosHeader* header)
+char* iflyos_get_refresh_token()
 {
-    if (NULL == header)
-    {
-        printf("init header error\n");
-        return;
-    }
-    
+    return iflyos_get_cfg_str_value(DEVICE_AUTH, "refresh_token");
+}
+
+BOOL iflyos_check_token()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    long expires = (long)iflyos_get_cfg_number_cfg(DEVICE_AUTH, "expires_in");
+    long create_time = (long)iflyos_get_cfg_number_cfg(DEVICE_AUTH, "created_at");
+
+    iflyos_print("%ld, %ld\n", expires, create_time);
+
+    return (tv.tv_sec - create_time) < expires;
     
 }
 
-cJSON* iflyos_create_header(FlyosHeader* header)
+char* iflyos_get_platform_name()
 {
-    if (NULL == header)
+    return iflyos_get_cfg_str_value(PLATFORM_PARAMS, "name");
+}
+
+char* iflyos_get_platform_version()
+{
+    return iflyos_get_cfg_str_value(PLATFORM_PARAMS, "version");
+}
+
+char* iflyos_get_system_version()
+{
+    return iflyos_get_cfg_str_value(SYSTEM_PARAMS, "version");
+}
+
+BOOL iflyos_get_system_sw_updater_state()
+{
+    return (BOOL)iflyos_get_cfg_number_cfg(SYSTEM_PARAMS, "software_updater");
+}
+
+BOOL iflyos_get_system_power_ctrl_state()
+{
+    return (BOOL)iflyos_get_cfg_number_cfg(SYSTEM_PARAMS, "power_controller");
+}
+
+BOOL iflyos_get_system_device_modes_state()
+{
+    return (BOOL)iflyos_get_cfg_number_cfg(SYSTEM_PARAMS, "device_modes");
+}
+
+BOOL iflyos_get_system_reboot_state()
+{
+    return (BOOL)iflyos_get_cfg_number_cfg(SYSTEM_PARAMS, "reboot");
+}
+
+char* iflyos_get_audio_version()
+{
+    return iflyos_get_cfg_str_value(AUDIO_PLAYER, "version");
+}
+
+char* iflyos_get_audio_state()
+{    
+    return iflyos_get_cfg_str_value(AUDIO_PLAYER, "state");
+}
+
+static BOOL iflyos_set_cfg_str_value(const char* params_item, const char* prop_item, const char* value)
+{
+    char* prop_item_val = NULL;
+    if (NULL == params_item || NULL == prop_item)
     {
         return NULL;
     }
-
-    cJSON *root = NULL;
-    cJSON *device = NULL;
-    cJSON *location = NULL;
-    cJSON *platform = NULL;
-
-    root = cJSON_CreateObject();
-
-    cJSON_AddItemToObject(root, "authorization", cJSON_CreateString(header->authorization));
-    cJSON_AddItemToObject(root, "device", device = cJSON_CreateObject());
-
-    cJSON_AddStringToObject(device, "device_id", header->device_id);
-    cJSON_AddStringToObject(device, "ip", header->device_ip);
-    cJSON_AddItemToObject(device, "location", location = cJSON_CreateObject());
-    cJSON_AddItemToObject(device, "platform", platform = cJSON_CreateObject());
-
-    cJSON_AddNumberToObject(location, "latitude", header->latitude);
-    cJSON_AddNumberToObject(location, "longtitude", header->longitude);
-    
-    cJSON_AddStringToObject(platform, "name", header->platform_name);
-    cJSON_AddStringToObject(platform, "version", header->platform_version);
-
-    return root;
-}
-
-
-cJSON* iflyos_create_context(FlyosContext* context)
-{
-    if (NULL == context)
+   
+    cJSON *params_node = cJSON_GetObjectItem(g_cfg_root, params_item);
+    if (!params_node)
     {
-        return;
+        return NULL;
     }
-
-    cJSON* root = NULL;
-    cJSON* system = NULL;
-    cJSON* audio_player = NULL;
-    cJSON* playback = NULL;
-
-    root = cJSON_CreateObject();
-
-    cJSON_AddItemToObject(root, "system", system = cJSON_CreateObject());
-    cJSON_AddItemToObject(root, "audio_player", audio_player = cJSON_CreateObject());
-
-    cJSON_AddStringToObject(system, "version", context->system->version);
-    cJSON_AddBoolToObject(system, "software_updater", context->system->software_updater);
-    cJSON_AddBoolToObject(system, "power_controller", context->system->power_controller);
-    cJSON_AddBoolToObject(system, "device_modes", context->system->device_modes);
-    cJSON_AddBoolToObject(system, "factory_reset", context->system->factory_reset);
-    cJSON_AddBoolToObject(system, "reboot", context->system->reboot);
-
-    cJSON_AddStringToObject(audio_player, "version", context->audio_player->version);
-    cJSON_AddItemToObject(audio_player, "playback", playback = cJSON_CreateObject());
-    
-    cJSON_AddStringToObject(playback, "state", context->audio_player->state);
-    cJSON_AddStringToObject(playback, "resource_id", context->audio_player->resource_id);
-    cJSON_AddNumberToObject(playback, "offset", context->audio_player->offset);
-
-    return root;
-}
-
-void iflyos_create_protol()
-{
-    cJSON *root = NULL;
-
-    //for test
-    FlyosHeader *header = (FlyosHeader *)malloc(sizeof(FlyosHeader));
-    memset(header, 0, sizeof(FlyosHeader));
-    
-    strcpy(header->authorization, "bearer WKAeL95n1ZNgsxNOmHf0upvkmq58MJKgl30aqEhIkOZfL_IL9lMUbGprmSmGjY3A");
-    strcpy(header->device_id, "HXT20200607P");
-    strcpy(header->platform_name, "linux");
-    strcpy(header->platform_version, "1.0.0");
-
-    FlyosContext *context = (FlyosContext*)malloc(sizeof(FlyosContext));
-    memset(context, 0, sizeof(FlyosContext));
-    context->system = (FlyosContextSystem*)malloc(sizeof(FlyosContextSystem));
-    memset(context->system, 0, sizeof(FlyosContextSystem));
-    context->audio_player = (FLyosContextAudioPlayer*)malloc(sizeof(FLyosContextAudioPlayer));
-    memset(context->audio_player, 0, sizeof(FLyosContextAudioPlayer));
-    
-    strcpy(context->system->version, "1.3");
-    context->system->software_updater = FALSE;
-    context->system->power_controller = FALSE;
-    context->system->device_modes = FALSE;
-    context->system->reboot = FALSE;
-
-    strcpy(context->audio_player->version, "1.2");
-    strcpy(context->audio_player->state, "IDLE");
-    
-    cJSON* header_node = iflyos_create_header(header);
-    cJSON* context_node = iflyos_create_context(context);
-    //end test
-    
-    root = cJSON_CreateObject();
-    cJSON_AddItemToObject(root, "iflyos_header", header_node);
-    cJSON_AddItemToObject(root, "iflyos_context", context_node);
-
-    //for test
-    char * fmt_json = cJSON_Print(root);
-    if (fmt_json != NULL)
+    cJSON *prop_node = cJSON_GetObjectItem(params_node, prop_item);
+    if(prop_node == NULL)
     {
-        printf("%s\n", fmt_json);
+        return NULL;
     }
     
-    iflyos_destroy_header(header);
-    iflyos_destroy_context(context);
+    if (cJSON_SetValuestring(prop_node, value) == NULL)
+    {
+        return FALSE;
+    }
 
-    cJSON_free(header_node);
-    cJSON_free(context_node);
-    cJSON_free(root);
+    iflyos_reload_cfg();
 
+    return TRUE;
+}
 
-    //end test
+static BOOL iflyos_set_cfg_number_value(const char* params_item, const char* prop_item, const double value)
+{
+    if (NULL == params_item || NULL == prop_item)
+    {
+        return FALSE;
+    }
+   
+    cJSON *params_node = cJSON_GetObjectItem(g_cfg_root, params_item);
+    if (!params_node)
+    {
+        return FALSE;
+    }
+    cJSON *prop_node = cJSON_GetObjectItem(params_node, prop_item);
+    if (!prop_node)
+    {
+        return FALSE;
+    }
+    cJSON_SetNumberValue(prop_node, value);
 
-    return;
+    iflyos_reload_cfg();
+    
+    return TRUE;
+}
+
+BOOL iflyos_set_client_id(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }
+    return iflyos_set_cfg_str_value(DEVICE_PARAMS, "client_id", value);
+}
+
+BOOL iflyos_set_grant_type(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }
+    return iflyos_set_cfg_str_value(DEVICE_PARAMS, "grant_type", value);
+}
+
+BOOL iflyos_set_device_code(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }
+    return iflyos_set_cfg_str_value(DEVICE_PARAMS, "device_code", value);
+}
+
+BOOL iflyos_set_device_id(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }
+    return iflyos_set_cfg_str_value(DEVICE_PARAMS, "device_id", value);
+}   
+
+BOOL iflyos_set_token_type(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }    
+    return iflyos_set_cfg_str_value(DEVICE_AUTH, "token_type", value);
+}
+
+BOOL iflyos_set_token(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    } 
+    return iflyos_set_cfg_str_value(DEVICE_AUTH, "access_token", value);
+}
+
+BOOL iflyos_set_refresh_token(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    } 
+    return iflyos_set_cfg_str_value(DEVICE_AUTH, "refresh_token", value);
+}
+
+BOOL iflyos_set_expired_time(const long times)
+{
+    if (0 == times)
+    {
+        return FALSE;
+    }
+    return iflyos_set_cfg_number_value(DEVICE_AUTH, "expires_in", times);
+}
+
+BOOL iflyos_set_created_time(const long times)
+{
+    if (0 == times)
+    {
+        return FALSE;
+    }
+    return iflyos_set_cfg_number_value(DEVICE_AUTH, "created_at", times);
+}
+
+BOOL iflyos_set_platform_name(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }     
+    return iflyos_set_cfg_str_value(PLATFORM_PARAMS, "name", value);
+}
+
+BOOL iflyos_set_platform_version(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }   
+    return iflyos_set_cfg_str_value(PLATFORM_PARAMS, "version", value);
+}
+
+BOOL iflyos_set_system_version(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }       
+    return iflyos_set_cfg_str_value(SYSTEM_PARAMS, "version", value);
+}
+
+BOOL iflyos_set_system_sw_updater_state(const BOOL value)
+{
+    return (BOOL)iflyos_set_cfg_number_cfg(SYSTEM_PARAMS, "software_updater", value);
+}
+
+BOOL iflyos_set_system_power_ctrl_state(const BOOL value)
+{
+    return (BOOL)iflyos_set_cfg_number_cfg(SYSTEM_PARAMS, "power_controller", value);
+}
+
+BOOL iflyos_set_system_device_modes_state(const BOOL value)
+{
+    return (BOOL)iflyos_set_cfg_number_cfg(SYSTEM_PARAMS, "device_modes", value);
+}
+
+BOOL iflyos_set_system_reboot_state(const BOOL value)
+{
+    return (BOOL)iflyos_set_cfg_number_cfg(SYSTEM_PARAMS, "reboot", value);
+}
+
+BOOL iflyos_get_audio_version(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }   
+    return iflyos_set_cfg_str_value(AUDIO_PLAYER, "version", value);
+}
+
+BOOL iflyos_get_audio_state(const char* value)
+{    
+    if(NULL == value)
+    {
+        return FALSE;
+    }   
+    return iflyos_set_cfg_str_value(AUDIO_PLAYER, "state", value);
 }

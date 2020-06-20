@@ -1,6 +1,7 @@
 #ifndef __IFLYOS_DEFINE_H__
 #define __IFLYOS_DEFINE_H__
 
+#define iflyos_print(format, ...) printf("%d >>> %s " format "\n", __LINE__, __FUNCTION__, ##__VA_ARGS__);
 
 typedef enum
 {

@@ -33,7 +33,7 @@
 
   "audio_player" :
   {
-    "version" : "1.2"
+    "version" : "1.2",
     "state" : "IDLE"
-  },
+  }
 }
