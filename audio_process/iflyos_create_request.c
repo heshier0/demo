@@ -184,7 +184,7 @@ char*  iflyos_create_audio_in_request()
     cJSON_AddItemToObject(root, "iflyos_request", request_node = cJSON_CreateObject());
 
     //audio-in request
-    cJSON *reuest_header = NULL;
+    cJSON *request_header = NULL;
     cJSON *request_payload = NULL;
     cJSON_AddItemToObject(request_node, "header", request_header = cJSON_CreateObject());
     cJSON_AddItemToObject(request_node, "payload", request_payload = cJSON_CreateObject());
