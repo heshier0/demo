@@ -440,7 +440,7 @@ BOOL iflyos_set_system_reboot_state(const BOOL value)
     return (BOOL)iflyos_set_cfg_number_cfg(SYSTEM_PARAMS, "reboot", value);
 }
 
-BOOL iflyos_get_audio_version(const char* value)
+BOOL iflyos_set_audio_version(const char* value)
 {
     if(NULL == value)
     {
@@ -449,7 +449,7 @@ BOOL iflyos_get_audio_version(const char* value)
     return iflyos_set_cfg_str_value(AUDIO_PLAYER, "version", value);
 }
 
-BOOL iflyos_get_audio_state(const char* value)
+BOOL iflyos_set_audio_state(const char* value)
 {    
     if(NULL == value)
     {
