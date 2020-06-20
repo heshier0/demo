@@ -41,7 +41,6 @@ static void uwsc_onopen(struct uwsc_client *cl)
     //     2, strlen("hello,"), "hello,", strlen("server"), "server");
 
     //printf("Please input:\n");
-    iflyos_create_protol();
 }
 
 static void uwsc_onmessage(struct uwsc_client *cl,
@@ -78,7 +77,9 @@ static void uwsc_onmessage(struct uwsc_client *cl,
         }
     }
     printf("Please input:\n");
-
+    char *buf = iflyos_create_audio_in_request();
+    cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
+    free(buf);
 }
 
 static void uwsc_onerror(struct uwsc_client *cl, int err, const char *msg)

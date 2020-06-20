@@ -168,7 +168,7 @@ cJSON* iflyos_create_context(FlyosContext* context)
     return root;
 }
 
-void iflyos_create_protol()
+char*  iflyos_create_audio_in_request()
 {
     cJSON *root = NULL;
 
@@ -176,25 +176,39 @@ void iflyos_create_protol()
     iflyos_create_init_context();
     cJSON* header_node = iflyos_create_header(inited_header);
     cJSON* context_node = iflyos_create_context(inited_context);
-    
+    cJSON* request_node = NULL;
+
     root = cJSON_CreateObject();
     cJSON_AddItemToObject(root, "iflyos_header", header_node);
     cJSON_AddItemToObject(root, "iflyos_context", context_node);
+    cJSON_AddItemToObject(root, "iflyos_request", request_node = cJSON_CreateObject());
+
+    //audio-in request
+    cJSON *reuest_header = NULL;
+    cJSON *request_payload = NULL;
+    cJSON_AddItemToObject(request_node, "header", request_header = cJSON_CreateObject());
+    cJSON_AddItemToObject(request_node, "payload", request_payload = cJSON_CreateObject());
+
+    cJSON_AddStringToObject(request_header, "name", recog_audion_in);
+    cJSON_AddStringToObject(request_header, "request_id", "");
+
+    cJSON_AddStringToObject(request_payload, "profile", "CLOSE_TALK");
+    cJSON_AddStringToObject(request_payload, "format", "AUDIO_L16_RATE_16000_CHANNELS_1");
+    
+    
+
+    char* request = cJSON_Print(root);
+
+
 
     //for test
-    char * fmt_json = cJSON_Print(root);
-    if (fmt_json != NULL)
-    {
-        printf("%s\n", fmt_json);
-    }
-    
     iflyos_destroy_header(inited_header);
     iflyos_destroy_context(inited_context);
-
     cJSON_free(header_node);
     cJSON_free(context_node);
     cJSON_free(root);
     //end test
 
-    return;
+    return request;
 }
+
