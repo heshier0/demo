@@ -5,6 +5,66 @@
 
 #include <iflyos_common_def.h>
 
+static FlyosHeader* inited_header;
+static FlyosContext* inited_context;
+
+void iflyos_create_init_header()
+{
+    inited_header = (FlyosHeader *)malloc(sizeof(FlyosHeader));
+    memset(inited_header, 0, sizeof(FlyosHeader));
+
+    char* token_type = iflyos_get_token_type();
+    char* token = iflyos_get_token();
+    strcpy(inited_header->authorization, token_type);
+    strcat(inited_header->authorization, " ");
+    strcat(inited_header->authorization, token);
+    free(token_type);
+    free(token);
+
+    char* device_id = iflyos_get_device_id();
+    strcpy(inited_header->device_id, device_id);
+    free(device_id);
+
+    char* platform_name = iflyos_get_platform_name();
+    strcpy(inited_header->platform_name, platform_name);
+    free(platform_name);
+
+    char* platform_version = iflyos_get_platform_version();
+    strcpy(inited_header->platform_version, platform_version);
+    free(platform_version);
+}
+
+void iflyos_create_init_context()
+{
+    inited_context = (FlyosContext *)malloc(sizeof(FlyosContext));
+    memset(inited_context, 0, sizeof(FlyosContext));
+
+    FlyosContextSystem context_system;
+    memset(context_system, 0, sizeof(FlyosContextSystem));
+    char* sys_version = iflyos_get_system_version();
+    strcpy(context_system.version, sys_version);
+    free(sys_version);
+
+    FLyosContextAudioPlayer audio_player;
+    memset(audio_player, 0, sizeof(FLyosContextAudioPlayer));
+    char* audio_version = iflyos_get_audio_version();
+    char* audio_state = iflyos_get_audio_state();
+    strcpy(audio_player.version, audio_version);
+    strcpy(audio_player.state, audio_state);
+    free(audio_version);
+    free(audio_state);
+
+    inited_context->system = (FlyosContextSystem *)malloc(sizeof(FlyosContextSystem));
+    memset(inited_context->system, 0, sizeof(FlyosContextSystem));
+    memcpy(inited_context->system, &context_system, sizeof(FlyosContextSystem));
+    
+    inited_context->audio_player = (FLyosContextAudioPlayer *)malloc(sizeof(FLyosContextAudioPlayer));
+    memset(inited_context->audio_player, 0, sizeof(FLyosContextAudioPlayer))
+    memcpy(inited_context->audio_player, &audio_player, sizeof(FLyosContextAudioPlayer));
+
+    return;
+}
+
 void iflyos_destroy_header(FlyosHeader* header)
 {
     if (NULL == header)
@@ -112,34 +172,8 @@ void iflyos_create_protol()
 {
     cJSON *root = NULL;
 
-    //for test
-    FlyosHeader *header = (FlyosHeader *)malloc(sizeof(FlyosHeader));
-    memset(header, 0, sizeof(FlyosHeader));
-    
-    strcpy(header->authorization, "bearer WKAeL95n1ZNgsxNOmHf0upvkmq58MJKgl30aqEhIkOZfL_IL9lMUbGprmSmGjY3A");
-    strcpy(header->device_id, "HXT20200607P");
-    strcpy(header->platform_name, "linux");
-    strcpy(header->platform_version, "1.0.0");
-
-    FlyosContext *context = (FlyosContext*)malloc(sizeof(FlyosContext));
-    memset(context, 0, sizeof(FlyosContext));
-    context->system = (FlyosContextSystem*)malloc(sizeof(FlyosContextSystem));
-    memset(context->system, 0, sizeof(FlyosContextSystem));
-    context->audio_player = (FLyosContextAudioPlayer*)malloc(sizeof(FLyosContextAudioPlayer));
-    memset(context->audio_player, 0, sizeof(FLyosContextAudioPlayer));
-    
-    strcpy(context->system->version, "1.3");
-    context->system->software_updater = FALSE;
-    context->system->power_controller = FALSE;
-    context->system->device_modes = FALSE;
-    context->system->reboot = FALSE;
-
-    strcpy(context->audio_player->version, "1.2");
-    strcpy(context->audio_player->state, "IDLE");
-    
-    cJSON* header_node = iflyos_create_header(header);
-    cJSON* context_node = iflyos_create_context(context);
-    //end test
+    cJSON* header_node = iflyos_create_header(inited_header);
+    cJSON* context_node = iflyos_create_context(inited_context);
     
     root = cJSON_CreateObject();
     cJSON_AddItemToObject(root, "iflyos_header", header_node);
@@ -152,14 +186,12 @@ void iflyos_create_protol()
         printf("%s\n", fmt_json);
     }
     
-    iflyos_destroy_header(header);
-    iflyos_destroy_context(context);
+    iflyos_destroy_header(inited_header);
+    iflyos_destroy_context(inited_context);
 
     cJSON_free(header_node);
     cJSON_free(context_node);
     cJSON_free(root);
-
-
     //end test
 
     return;

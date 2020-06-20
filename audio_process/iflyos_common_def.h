@@ -13,9 +13,8 @@
 
 #pragma pack(push, 1)
 typedef struct iflyos_header
-{
-    char token_type[8];                
-    char authorization[64];          //must
+{               
+    char authorization[80];          //must
     char device_id[20];                 //must
     char device_ip[16];             
     float latitude;
