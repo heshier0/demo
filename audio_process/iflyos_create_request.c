@@ -59,7 +59,7 @@ void iflyos_create_init_context()
     memcpy(inited_context->system, &context_system, sizeof(FlyosContextSystem));
     
     inited_context->audio_player = (FLyosContextAudioPlayer *)malloc(sizeof(FLyosContextAudioPlayer));
-    memset(inited_context->audio_player, 0, sizeof(FLyosContextAudioPlayer))
+    memset(inited_context->audio_player, 0, sizeof(FLyosContextAudioPlayer));
     memcpy(inited_context->audio_player, &audio_player, sizeof(FLyosContextAudioPlayer));
 
     return;
