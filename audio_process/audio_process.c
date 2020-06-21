@@ -49,33 +49,28 @@ static void uwsc_onmessage(struct uwsc_client *cl,
     printf("Recv:\n");
 
     if (binary) {
-        size_t i;
-        uint8_t *p = data;
-
-        for (i = 0; i < len; i++) {
-            printf("%02hhX ", p[i]);
-            if (i % 16 == 0 && i > 0)
-                puts("");
-        }
-        puts("");
+        //save file
     } 
     else 
     {
-        char* name = iflyos_get_response_name(data);
-        if(name && (strcmp(name, aplayer_audio_out) == 0) )
-        {
-            char* url = iflyos_get_audio_url(data);
-            if(NULL == url)
-            {
-                iflyos_free(name);
-                return;
-            }
-            printf("To download...\n");
-            iflyos_download_file(url); 
-            iflyos_free(name);
-            iflyos_free(url);
-        }
+        printf("%s\n", data);
+
+        // char* name = iflyos_get_response_name(data);
+        // if(name && (strcmp(name, aplayer_audio_out) == 0) )
+        // {
+        //     char* url = iflyos_get_audio_url(data);
+        //     if(NULL == url)
+        //     {
+        //         iflyos_free(name);
+        //         return;
+        //     }
+        //     printf("To download...\n");
+        //     iflyos_download_file(url); 
+        //     iflyos_free(name);
+        //     iflyos_free(url);
+        // }
     }
+    
     printf("Please input:\n");
     char *buf = iflyos_create_audio_in_request();
     printf("%s\n", buf);
@@ -138,6 +133,7 @@ int main(int argc, char **argv)
     }
 
     iflyos_load_cfg();
+
     char* device_id = iflyos_get_device_id();
     char* token = iflyos_get_token();
 
@@ -171,6 +167,7 @@ int main(int argc, char **argv)
     ev_run(loop, 0);
 
     free(cl);
+    iflyos_unload_config();
     
     return 0;
 }
