@@ -173,7 +173,7 @@ int main(int argc, char **argv)
     ev_run(loop, 0);
 
     free(cl);
-    iflyos_unload_config();
+    iflyos_unload_cfg();
     
     return 0;
 }
