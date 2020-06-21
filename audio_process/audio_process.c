@@ -54,7 +54,7 @@ static void uwsc_onmessage(struct uwsc_client *cl,
     } 
     else 
     {
-        printf("%s\n", data);
+        printf("%d, %s\n", len, data);
 
         // char* name = iflyos_get_response_name(data);
         // if(name && (strcmp(name, aplayer_audio_out) == 0) )
@@ -100,7 +100,6 @@ static void signal_cb(struct ev_loop *loop, ev_signal *w, int revents)
 {
     if (w->signum == SIGINT) {
         ev_break(loop, EVBREAK_ALL);
-        uwsc_log_info("Normal quit\n");
     }
 }
 
@@ -116,47 +115,26 @@ static void usage(const char *prog)
 
 int main(int argc, char **argv)
 {
-	const char *url = "ws://localhost:8080/ws";
-
+    struct uwsc_client *cl;
     struct ev_loop *loop = EV_DEFAULT;
     struct ev_signal signal_watcher;
-	int ping_interval = 10;	/* second */
-    struct uwsc_client *cl;
-	int opt;
 
-    while ((opt = getopt(argc, argv, "u:P:")) != -1) {
-        switch (opt) {  
-		case 'u':
-            url = optarg;
-            break;  
-        case 'P':
-			ping_interval = atoi(optarg);
-			break;  
-        default: /* '?' */
-            usage(argv[0]);
-            return -1;
-        }
-    }
-
+    uwsc_log_info("Haoxuetong: %s\n", "1.0.0"); 
+    
     iflyos_load_cfg();
 
     char* device_id = iflyos_get_device_id();
     char* token = iflyos_get_token();
-
-	uwsc_log_info("Haoxuetong: %s\n", "1.0.0");
-
-
-    char ifly_url[255] = {0};
-    // const char* token = "WKAeL95n1ZNgsxNOmHf0upvkmq58MJKgl30aqEhIkOZfL_IL9lMUbGprmSmGjY3A";
-    // const char* device_id = "HXT20200607P";
     uwsc_log_info("token: %s\n", token);
     uwsc_log_info("device_id: %s\n", device_id);
+    
+    char ifly_url[255] = {0};
     sprintf(ifly_url, "wss://ivs.iflyos.cn/embedded/v1?token=%s&device_id=%s", token, device_id);
 
     iflyos_free(device_id);
     iflyos_free(token);
    
-    cl = uwsc_new(loop, ifly_url, ping_interval, NULL);
+    cl = uwsc_new(loop, ifly_url, 10, NULL);
     if (!cl)
         return -1;
 
@@ -172,6 +150,7 @@ int main(int argc, char **argv)
 
     ev_run(loop, 0);
 
+    uwsc_log_info("Normal quit\n");
     free(cl);
     iflyos_unload_cfg();
     
