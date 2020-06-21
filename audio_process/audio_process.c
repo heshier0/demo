@@ -21,7 +21,7 @@ static void stdin_read_cb(struct ev_loop *loop, struct ev_io *w, int revents)
         // if (buf[0] == 'q')
         //     cl->send_close(cl, UWSC_CLOSE_STATUS_NORMAL, "ByeBye");
         // else
-            cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
+        //    cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
     }
 }
 
@@ -43,6 +43,7 @@ static void uwsc_onopen(struct uwsc_client *cl)
     //printf("Please input:\n");
 }
 
+static int send = 0;
 static void uwsc_onmessage(struct uwsc_client *cl,
 	void *data, size_t len, bool binary)
 {
@@ -70,12 +71,17 @@ static void uwsc_onmessage(struct uwsc_client *cl,
         //     iflyos_free(url);
         // }
     }
-    
+
     printf("Please input:\n");
-    char *buf = iflyos_create_audio_in_request();
-    printf("%s\n", buf);
-    cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
-    free(buf);
+    if (!send)
+    {
+        char *buf = iflyos_create_audio_in_request();
+        printf("%s\n", buf);
+        cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
+        free(buf);
+        send = 1;
+    }
+
 }
 
 static void uwsc_onerror(struct uwsc_client *cl, int err, const char *msg)
