@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <cJSON.h>
 
+#include "iflyos_defines.h"
+
 #define IFLYOS_REPONSES             ("iflyos_responses")
 #define IFLYOS_HEADER               ("header")
 #define IFLYOS_HEADER_NAME          ("name")
@@ -99,8 +101,31 @@ char* iflyos_get_audio_secure_url(const char* json_data)
     return iflyos_get_response_value(json_data, IFLYOS_PAYLOAD, IFLYOS_MP3_SECURE_URL, NULL);
 }
 
-
 char* iflyos_get_payload_metadata_text(const char* json_data)
 {
     return iflyos_get_response_value(json_data, IFLYOS_PAYLOAD, IFLYOS_METADATA, IFLYOS_META_TEXT);
+}
+
+void send_voice(void *data)
+{
+    char* name = iflyos_get_response_name(data);
+    if(name && (strcmp(name, aplayer_audio_out) == 0) )
+    {
+        char* url = iflyos_get_audio_url(data);
+        if(NULL == url)
+        {
+            iflyos_free(name);
+            return;
+        }
+        iflyos_send_mp3_voice(url); 
+        
+        iflyos_free(url);
+    }
+    
+    if (name != NULL)
+    {
+        iflyos_free(name);
+    }
+    
+    return;
 }

@@ -4,9 +4,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
+
 #include <uwsc.h>
 
-#include "iflyos_defines.h"
 
 static void stdin_read_cb(struct ev_loop *loop, struct ev_io *w, int revents)
 {
@@ -21,7 +24,7 @@ static void stdin_read_cb(struct ev_loop *loop, struct ev_io *w, int revents)
         // if (buf[0] == 'q')
         //     cl->send_close(cl, UWSC_CLOSE_STATUS_NORMAL, "ByeBye");
         // else
-        //    cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
+            cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
     }
 }
 
@@ -43,45 +46,31 @@ static void uwsc_onopen(struct uwsc_client *cl)
     //printf("Please input:\n");
 }
 
-static int send = 0;
 static void uwsc_onmessage(struct uwsc_client *cl,
 	void *data, size_t len, bool binary)
 {
     printf("Recv:\n");
 
     if (binary) {
-        //save file
+        size_t i;
+        uint8_t *p = data;
+
+        for (i = 0; i < len; i++) {
+            printf("%02hhX ", p[i]);
+            if (i % 16 == 0 && i > 0)
+                puts("");
+        }
+        puts("");
     } 
     else 
     {
-        printf("%d, %s\n", len, data);
-
-        // char* name = iflyos_get_response_name(data);
-        // if(name && (strcmp(name, aplayer_audio_out) == 0) )
-        // {
-        //     char* url = iflyos_get_audio_url(data);
-        //     if(NULL == url)
-        //     {
-        //         iflyos_free(name);
-        //         return;
-        //     }
-        //     printf("To download...\n");
-        //     iflyos_download_file(url); 
-        //     iflyos_free(name);
-        //     iflyos_free(url);
-        // }
+        send_voice(data);
     }
-
     printf("Please input:\n");
-    if (!send)
-    {
-        char *buf = iflyos_create_audio_in_request();
-        printf("%s\n", buf);
-        cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
-        free(buf);
-        send = 1;
-    }
-
+    // char *buf = iflyos_create_audio_in_request();
+    // printf("%s\n", buf);
+    // cl->send(cl, buf, strlen(buf),  UWSC_OP_TEXT);
+    // free(buf);
 }
 
 static void uwsc_onerror(struct uwsc_client *cl, int err, const char *msg)
@@ -100,6 +89,7 @@ static void signal_cb(struct ev_loop *loop, ev_signal *w, int revents)
 {
     if (w->signum == SIGINT) {
         ev_break(loop, EVBREAK_ALL);
+        uwsc_log_info("Normal quit\n");
     }
 }
 
@@ -115,26 +105,28 @@ static void usage(const char *prog)
 
 int main(int argc, char **argv)
 {
-    struct uwsc_client *cl;
+	const char *url = "ws://localhost:8080/ws";
+
     struct ev_loop *loop = EV_DEFAULT;
     struct ev_signal signal_watcher;
+	int ping_interval = 10;	/* second */
+    struct uwsc_client *cl;
 
-    uwsc_log_info("Haoxuetong: %s\n", "1.0.0"); 
-    
     iflyos_load_cfg();
-
     char* device_id = iflyos_get_device_id();
     char* token = iflyos_get_token();
+
+	uwsc_log_info("Haoxuetong: %s\n", "1.0.0");
     uwsc_log_info("token: %s\n", token);
     uwsc_log_info("device_id: %s\n", device_id);
-    
+
     char ifly_url[255] = {0};
     sprintf(ifly_url, "wss://ivs.iflyos.cn/embedded/v1?token=%s&device_id=%s", token, device_id);
 
     iflyos_free(device_id);
     iflyos_free(token);
    
-    cl = uwsc_new(loop, ifly_url, 10, NULL);
+    cl = uwsc_new(loop, ifly_url, ping_interval, NULL);
     if (!cl)
         return -1;
 
@@ -150,9 +142,7 @@ int main(int argc, char **argv)
 
     ev_run(loop, 0);
 
-    uwsc_log_info("Normal quit\n");
     free(cl);
-    iflyos_unload_cfg();
     
     return 0;
 }

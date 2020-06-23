@@ -1,20 +1,14 @@
-# target marcros
-TARGET := AudioProcess
-MAIN_SRC := audio_process.c
+#!/bin/sh
 
-# compile marcros
-DIRS := iflyos
-OBJS := 
+BIN             = AudioProcess
+PROJ_DIR_NAME   = audio_process
 
-# intermedia compile marcros
-ALL_OBJS := 
-CLEAN_FILES := $(TARGET) $(OBJS)
-DIST_CLEAN_FILES := $(OBJS)
+PROJ_PATH         = $(shell pwd)
+DEBUG = no
 
-# recursive wildcard
-rwildcard=$(foreach d,$(wildcard $(addsuffix *,$(1))),$(call rwildcard,$(d)/,$(2))$(filter $(subst *,%,$(2)),$(d)))
+DIRS    := $(shell find . -maxdepth 1 -type d)
 
-# cross-tools
+
 CC              = arm-himix200-linux-gcc
 CPP             = arm-himix200-linux-g++
 AR              = arm-himix200-linux-ar
@@ -45,41 +39,45 @@ CPPFLAGS        = -DLINUX -Wno-multichar -Wimplicit-function-declaration \
                   -fPIC -std=c++11 -fexceptions -fpermissive -w -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer
 
 
-# default target
-default: show-info all
+DEBUG_FLAGS     = -fexceptions -finstrument-functions -funwind-tables -g -rdynamic -O0
+RELEASE_FLAGS   = -O3 #-Wl, -gc-sections
 
-# non-phony targets
-$(TARGET): build-subdirs $(OBJS) find-all-objs
-	@echo -e "\t" CC $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@
-	@$(CC) $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@
+ifeq ($(DEBUG), no)
+    CFLAGS      += $(RELEASE_FLAGS)
+    CPPFLAGS    += $(RELEASE_FLAGS)
+else
+    CFLAGS      += $(DEBUG_FLAGS)
+    CPPFLAGS    += $(DEBUG_FLAGS)
+endif
 
-# phony targets
-.PHONY: all
-all: $(TARGET)
-	@echo Target $(TARGET) build finished.
+BIN_SUFFIX      = $(suffix $(BIN))
 
-.PHONY: clean
-clean: clean-subdirs
-	@echo CLEAN $(CLEAN_FILES)
-	@rm -f $(CLEAN_FILES)
+SRCS            = $(foreach dir,$(DIRS),$(wildcard $(dir)/*.c))
+OBJS            = $(patsubst %.c,%.o,$(SRCS))
+BULID_CMD       = $(CC) -o $(BIN) $(OBJS) $(LIBS)
+INSTALL_CMD     = $(STRIP) $(BIN)
+CLEAN_CMD       = rm -f $(BIN) $(OBJS) 
 
-.PHONY: distclean
-distclean: clean-subdirs
-	@echo CLEAN $(DIST_CLEAN_FILES)
-	@rm -f $(DIST_CLEAN_FILES)
+all : $(BIN)
 
-# phony funcs
-.PHONY: find-all-objs
-find-all-objs:
-	$(eval ALL_OBJS += $(call rwildcard,$(DIRS),*.o))
+$(OBJS) : $(SRCS) 
+	@echo $(SRCS)
+	@$(CC) -c $(SRCS) $(INCS) $(CFLAGS) $(LIBS)
 
-.PHONY: show-info
-show-info:
-	@echo Building Project
 
-# need to be placed at the end of the file
-mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
-export PROJECT_PATH := $(patsubst %/,%,$(dir $(mkfile_path)))
-export MAKE_INCLUDE=$(PROJECT_PATH)/config/make.global
-export SUB_MAKE_INCLUDE=$(PROJECT_PATH)/config/submake.global
-include $(MAKE_INCLUDE)
+
+$(BIN) : $(OBJS) $(CPPOBJS)
+	@echo $(BULID_CMD)
+	@$(BULID_CMD)
+	@echo $(INSTALL_CMD)
+	@$(INSTALL_CMD)
+	@echo "-rm $(OBJS)"
+	@-rm $(OBJS)
+	@echo "$(BIN) build success!"
+	
+clean:
+	@echo $(CLEAN_CMD)
+	@$(CLEAN_CMD)
+	@echo "$(BIN) clean success!"
+
+

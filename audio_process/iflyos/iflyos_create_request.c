@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <cJSON.h>
 
-#include <iflyos_common_def.h>
+#include "iflyos_common_def.h"
 
 static FlyosHeader* inited_header;
 static FlyosContext* inited_context;
