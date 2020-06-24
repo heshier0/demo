@@ -129,7 +129,7 @@ typedef struct iflyos_context
     FlyosContextSystem* system;
     FLyosContextAudioPlayer* audio_player;
     FlyosContextRecognizer* recognizer;
-
+    FlyosContextSpeaker* speaker;
 }FlyosContext;
 
 

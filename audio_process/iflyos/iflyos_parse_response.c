@@ -106,26 +106,18 @@ char* iflyos_get_payload_metadata_text(const char* json_data)
     return iflyos_get_response_value(json_data, IFLYOS_PAYLOAD, IFLYOS_METADATA, IFLYOS_META_TEXT);
 }
 
-void send_voice(void *data)
+
+void iflyos_play_response_audio(void *data)
 {
-    char* name = iflyos_get_response_name(data);
-    if(name && (strcmp(name, aplayer_audio_out) == 0) )
+    //char* url = iflyos_get_audio_url(data);
+    char* url = iflyos_get_audio_secure_url(data);
+    if(NULL == url)
     {
-        char* url = iflyos_get_audio_url(data);
-        if(NULL == url)
-        {
-            iflyos_free(name);
-            return;
-        }
-        iflyos_send_mp3_voice(url); 
-        
-        iflyos_free(url);
+        return;
     }
+    iflyos_send_mp3_voice(url); 
     
-    if (name != NULL)
-    {
-        iflyos_free(name);
-    }
-    
+    iflyos_free(url);
+
     return;
 }

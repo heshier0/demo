@@ -7,43 +7,62 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
 #include <uwsc.h>
 
+#include "iflyos_defines.h"
 
-static void stdin_read_cb(struct ev_loop *loop, struct ev_io *w, int revents)
+static int g_sampling = 1;
+static int g_stop_capture = 0;
+
+static void send_pcm_cb(void *data)
 {
-    struct uwsc_client *cl = w->data;
-    char buf[128] = "";
-    int n;
+    if (NULL == data)
+    {
+        return;
+    }    
 
-    n = read(w->fd, buf, sizeof(buf));
-    if (n > 1) {
-        buf[n - 1] = 0;
+    struct uwsc_client *cl = (struct uwsc_client *)data;
+    int read_count = 0; 
+    char pcm_buf[640] = {0};
 
-        // if (buf[0] == 'q')
-        //     cl->send_close(cl, UWSC_CLOSE_STATUS_NORMAL, "ByeBye");
-        // else
-            cl->send(cl, buf, strlen(buf) + 1,  UWSC_OP_TEXT);
+    int fd = iflyos_get_audio_data_handle();
+    if(-1 == fd)
+    {
+        return;
     }
+    printf("*********************\n");
+    while(g_sampling)
+    {
+        read_count = read(fd, pcm_buf, 640);
+        if (read_count >0)
+        {   
+            printf("To send pcm data....\n");
+            char *req = iflyos_create_audio_in_request();
+            cl->send(cl, req, strlen(req), UWSC_OP_TEXT);
+            cl->send(cl, pcm_buf, 640, UWSC_OP_BINARY);
+            free(req);
+            if (g_stop_capture)
+            {
+                printf("To send END flag !!!!!\n");
+                cl->send(cl, "__END__", 7, UWSC_OP_BINARY);
+                g_stop_capture = 0;
+            }
+        }
+    }
+
+    close(fd);
 }
 
 static void uwsc_onopen(struct uwsc_client *cl)
 {
-    static struct ev_io stdin_watcher;
-
     uwsc_log_info("onopen\n");
 
-    stdin_watcher.data = cl;
+    //added by hekai
+    iflyos_init_request();
 
-    ev_io_init(&stdin_watcher, stdin_read_cb, STDIN_FILENO, EV_READ);
-    ev_io_start(cl->loop, &stdin_watcher);
-
-    /* Usage of send_ex */
-    // cl->send_ex(cl, UWSC_OP_TEXT,
-    //     2, strlen("hello,"), "hello,", strlen("server"), "server");
-
-    //printf("Please input:\n");
+    pthread_t tid;
+    pthread_create(&tid, NULL, send_pcm_cb, (void*)cl);
+    //end added
 }
 
 static void uwsc_onmessage(struct uwsc_client *cl,
@@ -52,25 +71,27 @@ static void uwsc_onmessage(struct uwsc_client *cl,
     printf("Recv:\n");
 
     if (binary) {
-        size_t i;
-        uint8_t *p = data;
-
-        for (i = 0; i < len; i++) {
-            printf("%02hhX ", p[i]);
-            if (i % 16 == 0 && i > 0)
-                puts("");
-        }
-        puts("");
+        //文件
     } 
     else 
     {
-        send_voice(data);
+        printf("[%.*s]\n", (int)len, (char *)data);
+        char* name = iflyos_get_response_name(data);
+        if (NULL == name)
+        {
+            return;
+        }
+        if(strcmp(name, aplayer_audio_out) == 0)
+        {
+            iflyos_play_response_audio(data);
+        }
+        else if (strcmp(name, recog_stop_capture) == 0)
+        {
+            g_stop_capture = 1;
+        }
+        free(name);
     }
-    printf("Please input:\n");
-    // char *buf = iflyos_create_audio_in_request();
-    // printf("%s\n", buf);
-    // cl->send(cl, buf, strlen(buf),  UWSC_OP_TEXT);
-    // free(buf);
+    //printf("Please input:\n");
 }
 
 static void uwsc_onerror(struct uwsc_client *cl, int err, const char *msg)
@@ -82,6 +103,10 @@ static void uwsc_onerror(struct uwsc_client *cl, int err, const char *msg)
 static void uwsc_onclose(struct uwsc_client *cl, int code, const char *reason)
 {
     uwsc_log_err("onclose:%d: %s\n", code, reason);
+    //added by hekai
+    iflyos_deinit_request();
+    g_sampling = 0;
+    //end added
     ev_break(cl->loop, EVBREAK_ALL);
 }
 
@@ -91,16 +116,6 @@ static void signal_cb(struct ev_loop *loop, ev_signal *w, int revents)
         ev_break(loop, EVBREAK_ALL);
         uwsc_log_info("Normal quit\n");
     }
-}
-
-static void usage(const char *prog)
-{
-    fprintf(stderr, "Usage: %s [option]\n"
-        "      -t token       #token\n"
-        "      -d device_id   #device id\n"
-        "      -P n      	# Ping interval\n"
-        , prog);
-    exit(1);
 }
 
 int main(int argc, char **argv)

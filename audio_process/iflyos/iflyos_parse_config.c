@@ -13,6 +13,7 @@
 #define PLATFORM_PARAMS     "platform_params"
 #define SYSTEM_PARAMS       "system_params"
 #define AUDIO_PLAYER        "audio_player"
+#define SPEAKER            "speaker"
 
 
 static cJSON* g_cfg_root  = NULL;     //指向配置文件的Object
@@ -165,6 +166,7 @@ static double iflyos_get_cfg_number_cfg(const char* params_item, const char* pro
     return cJSON_GetNumberValue(prop_node);
 }
 
+/*********get params********/
 char* iflyos_get_client_id()
 {
     return iflyos_get_cfg_str_value(DEVICE_PARAMS, "client_id");
@@ -259,6 +261,21 @@ char* iflyos_get_audio_state()
     return iflyos_get_cfg_str_value(AUDIO_PLAYER, "state");
 }
 
+char* iflyos_get_speaker_version()
+{
+    return iflyos_get_cfg_str_value(SPEAKER, "version");
+}
+
+int iflyos_get_speaker_volume()
+{
+    return (int)iflyos_get_cfg_number_cfg(SPEAKER, "volume");
+}
+
+char* iflyos_get_speaker_type()
+{
+    return iflyos_get_cfg_str_value(SPEAKER, "type");
+}
+/********set params***********/
 static BOOL iflyos_set_cfg_str_value(const char* params_item, const char* prop_item, const char* value)
 {
     char* prop_item_val = NULL;

@@ -1,34 +1,24 @@
-# target marcros
-TARGET := AudioProcess
-MAIN_SRC := audio_process.c
-
-# compile marcros
-DIRS := iflyos
-OBJS := 
-
-# intermedia compile marcros
-ALL_OBJS := 
-CLEAN_FILES := $(TARGET) $(OBJS)
-DIST_CLEAN_FILES := $(OBJS)
-
-# recursive wildcard
-rwildcard=$(foreach d,$(wildcard $(addsuffix *,$(1))),$(call rwildcard,$(d)/,$(2))$(filter $(subst *,%,$(2)),$(d)))
-
-# cross-tools
 CC              = arm-himix200-linux-gcc
 CPP             = arm-himix200-linux-g++
 AR              = arm-himix200-linux-ar
 STRIP           = arm-himix200-linux-strip
 
-INCS            = -I$(PROJ_PATH)/. \
-                  -I$(DIRS)/ \
+SUBDIRS         = $(shell ls -l | grep ^d | awk '{if($$9 != "output") print $$9}')
+ROOT_DIR        = $(shell pwd)
+BIN             = AudioProcess
+OBJS_DIR        = output/obj
+BIN_DIR         = output/bin
+CUR_SOURCE      = ${wildcard *.c}
+CUR_OBJS        = ${patsubst %.c, %.o, $(CUR_SOURCE)}
+
+INCS            = -I$(ROOT_DIR)/. \
+		  -I$(SUBDIRS)/. \
                   -I/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/include \
                   -I/mnt/g/workspace/plugins/libev/include \
                   -I/mnt/g/workspace/plugins/libuwsc/include \
                   -I/mnt/g/workspace/plugins/cjson/include    \
                   -I/mnt/g/workspace/plugins/libcurl/include \
                   -I/mnt/g/workspace/plugins/openssl/include 
-                               
 
 LIBS            = -L/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/lib -lm -ldl -pthread \
                   -L/mnt/g/workspace/plugins/libev/lib -lev \
@@ -36,50 +26,26 @@ LIBS            = -L/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/lib -l
                   -L/mnt/g/workspace/plugins/cjson/lib -lcjson \
                   -L/mnt/g/workspace/plugins/libcurl/lib -lcurl \
                   -L/mnt/g/workspace/plugins/openssl/lib -lssl \
-                  -L/mnt/g/workspace/plugins/openssl/lib -lcrypto
-                  
+                  -L/mnt/g/workspace/plugins/openssl/lib -lcrypto   
 
 CFLAGS          = -DLINUX -Wno-multichar -Wimplicit-function-declaration \
                   -fPIC -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer 
+
 CPPFLAGS        = -DLINUX -Wno-multichar -Wimplicit-function-declaration \
-                  -fPIC -std=c++11 -fexceptions -fpermissive -w -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer
+                  -fPIC -std=c++11 -fexceptions -fpermissive -w -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer                              
 
+export CC BIN OBJS_DIR BIN_DIR ROOT_DIR CFLAGS CPPFLAGS INCS LIBS
 
-# default target
-default: show-info all
+all:$(SUBDIRS) $(CUR_OBJS) DEBUG
 
-# non-phony targets
-$(TARGET): build-subdirs $(OBJS) find-all-objs
-	@echo -e "\t" CC $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@
-	@$(CC) $(CCFLAG) $(ALL_OBJS) $(MAIN_SRC) -o $@
-
-# phony targets
-.PHONY: all
-all: $(TARGET)
-	@echo Target $(TARGET) build finished.
-
-.PHONY: clean
-clean: clean-subdirs
-	@echo CLEAN $(CLEAN_FILES)
-	@rm -f $(CLEAN_FILES)
-
-.PHONY: distclean
-distclean: clean-subdirs
-	@echo CLEAN $(DIST_CLEAN_FILES)
-	@rm -f $(DIST_CLEAN_FILES)
-
-# phony funcs
-.PHONY: find-all-objs
-find-all-objs:
-	$(eval ALL_OBJS += $(call rwildcard,$(DIRS),*.o))
-
-.PHONY: show-info
-show-info:
-	@echo Building Project
-
-# need to be placed at the end of the file
-mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
-export PROJECT_PATH := $(patsubst %/,%,$(dir $(mkfile_path)))
-export MAKE_INCLUDE=$(PROJECT_PATH)/config/make.global
-export SUB_MAKE_INCLUDE=$(PROJECT_PATH)/config/submake.global
-include $(MAKE_INCLUDE)
+$(SUBDIRS):ECHO
+	make -C $@
+DEBUG:ECHO
+	make -C output
+ECHO:
+	@echo $(SUBDIRS)
+$(CUR_OBJS):%.o:%.c
+	$(CC) -c $^ -o $(ROOT_DIR)/$(OBJS_DIR)/$@ $(CFLAGS) $(INCS) 
+clean:
+	@rm $(OBJS_DIR)/*.o
+	@rm -rf $(BIN_DIR)/*
