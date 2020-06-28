@@ -1,6 +1,7 @@
 #ifndef __IFLYOS_COMMON_DEF_H__
 #define __IFLYOS_COMMON_DEF_H__
 
+#include "utils.h"
 #include "iflyos_defines.h"
 
 /*********************************************

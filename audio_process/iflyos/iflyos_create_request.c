@@ -285,14 +285,14 @@ int iflyos_get_audio_data_handle()
         int res = mkfifo(fifo_pcm, 0777);
         if(res != 0)
         {
-            iflyos_print("could not create fifo %s\n", fifo_pcm);
+            utils_print("could not create fifo %s\n", fifo_pcm);
             return -1;
         }
     }
     fd = open(fifo_pcm, O_RDONLY | O_NONBLOCK);
     if (fd == -1)
     {
-        iflyos_print("pcm fifo open error\n");
+        utils_print("pcm fifo open error\n");
         return -1;
     }
 

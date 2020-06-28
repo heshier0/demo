@@ -9,6 +9,7 @@
 
 #include <uwsc.h>
 
+#include "utils.h"
 #include "iflyos_defines.h"
 
 static int g_sampling = 1;
@@ -96,13 +97,13 @@ static void uwsc_onmessage(struct uwsc_client *cl,
 
 static void uwsc_onerror(struct uwsc_client *cl, int err, const char *msg)
 {
-    uwsc_log_err("onerror:%d: %s\n", err, msg);
+    utils_print("onerror:%d: %s\n", err, msg);
     ev_break(cl->loop, EVBREAK_ALL);
 }
 
 static void uwsc_onclose(struct uwsc_client *cl, int code, const char *reason)
 {
-    uwsc_log_err("onclose:%d: %s\n", code, reason);
+    utils_print("onclose:%d: %s\n", code, reason);
     //added by hekai
     iflyos_deinit_request();
     g_sampling = 0;
@@ -114,7 +115,7 @@ static void signal_cb(struct ev_loop *loop, ev_signal *w, int revents)
 {
     if (w->signum == SIGINT) {
         ev_break(loop, EVBREAK_ALL);
-        uwsc_log_info("Normal quit\n");
+        utils_print("Normal quit\n");
     }
 }
 
@@ -127,13 +128,16 @@ int main(int argc, char **argv)
 	int ping_interval = 10;	/* second */
     struct uwsc_client *cl;
 
+    hxt_load_cfg();
+    hxt_get_token();
+
+#if 0
     iflyos_load_cfg();
+
     char* device_id = iflyos_get_device_id();
     char* token = iflyos_get_token();
 
-	uwsc_log_info("Haoxuetong: %s\n", "1.0.0");
-    uwsc_log_info("token: %s\n", token);
-    uwsc_log_info("device_id: %s\n", device_id);
+	printf("Haoxuetong: %s\n", "1.0.0");
 
     char ifly_url[255] = {0};
     sprintf(ifly_url, "wss://ivs.iflyos.cn/embedded/v1?token=%s&device_id=%s", token, device_id);
@@ -145,7 +149,7 @@ int main(int argc, char **argv)
     if (!cl)
         return -1;
 
-	uwsc_log_info("Start connect...\n");
+	utils_print("Start connect...\n");
 
     cl->onopen = uwsc_onopen;
     cl->onmessage = uwsc_onmessage;
@@ -158,6 +162,7 @@ int main(int argc, char **argv)
     ev_run(loop, 0);
 
     free(cl);
-    
+ #endif
+
     return 0;
 }

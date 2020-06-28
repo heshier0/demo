@@ -106,7 +106,6 @@ char* iflyos_get_payload_metadata_text(const char* json_data)
     return iflyos_get_response_value(json_data, IFLYOS_PAYLOAD, IFLYOS_METADATA, IFLYOS_META_TEXT);
 }
 
-
 void iflyos_play_response_audio(void *data)
 {
     //char* url = iflyos_get_audio_url(data);

@@ -12,7 +12,7 @@ CUR_SOURCE      = ${wildcard *.c}
 CUR_OBJS        = ${patsubst %.c, %.o, $(CUR_SOURCE)}
 
 INCS            = -I$(ROOT_DIR)/. \
-		  -I$(SUBDIRS)/. \
+		  $(foreach tmp,$(SUBDIRS),-I$(ROOT_DIR)/$(tmp)/.) \
                   -I/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/include \
                   -I/mnt/g/workspace/plugins/libev/include \
                   -I/mnt/g/workspace/plugins/libuwsc/include \
@@ -28,10 +28,10 @@ LIBS            = -L/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/lib -l
                   -L/mnt/g/workspace/plugins/openssl/lib -lssl \
                   -L/mnt/g/workspace/plugins/openssl/lib -lcrypto   
 
-CFLAGS          = -DLINUX -Wno-multichar -Wimplicit-function-declaration \
+CFLAGS          = -DLINUX -DDEBUG -Wno-multichar -Wimplicit-function-declaration \
                   -fPIC -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer 
 
-CPPFLAGS        = -DLINUX -Wno-multichar -Wimplicit-function-declaration \
+CPPFLAGS        = -DLINUX -DEBUG -Wno-multichar -Wimplicit-function-declaration \
                   -fPIC -std=c++11 -fexceptions -fpermissive -w -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer                              
 
 export CC BIN OBJS_DIR BIN_DIR ROOT_DIR CFLAGS CPPFLAGS INCS LIBS
