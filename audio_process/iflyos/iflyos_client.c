@@ -30,8 +30,6 @@ static int open_mp3_fifo(const char* fifo_name)
     return fd;
 }
 
-
-
 int iflyos_send_mp3_voice(const char *url)
 {
     CURL *curl_handle;

@@ -9,7 +9,10 @@
 #define HXT_UPLOAD_FILE                 "/Upload/UploadFileCustom?absoluteUrl=true"
 #define HXT_GETMAX_CHUNK                "/Upload/GetMaxChunk?md5=%s&ext=%s"
 #define HXT_UPLOAD_CHUNK                "/Upload/Chunkload?md5=%s&chunk=%d&chunks=%d"
-#define HXT_MERGE_FILES                 "/Upload/MergeFiles?md5=%s&ext=%s&fileTotalSize=%d&typeString=%s"
+#define HXT_MERGE_FILES                 "/Upload/MergeFiles?md5=%s&ext=%s&fileTotalSize=%lu&typeString=%s"
+
+#define HXT_RET_OK                      1
+#define HXT_STATUS_OK                   "S0001"
 
 #pragma pack(push, 1)
 typedef struct hxt_result

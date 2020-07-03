@@ -8,8 +8,7 @@
 
 #include "utils.h"
 
-
-static char* get_download_filename(const char *url)
+static char* separate_filename(const char *url)
 {
     char * filename = NULL;
     if (NULL == url)
@@ -141,23 +140,23 @@ void utils_unload_cfg(cJSON* root)
     return;
 }
 
-void utils_reload_cfg(const char* cfg, cJSON* root)
+BOOL utils_reload_cfg(const char* cfg, cJSON* root)
 {
     if (NULL==root || NULL==cfg)
     {
-        return;
+        return FALSE;
     }
 
     char* content = cJSON_Print(root);
     if(NULL == content)
     {
-        return;
+        return FALSE;
     }
 
     FILE *fp = fopen(cfg, "w+");
-    if (fp == NULL)
+    if (NULL == fp )
     {
-        return;
+        return FALSE;
     }
     
     fwrite(content, strlen(content), 1, fp);
@@ -166,7 +165,7 @@ void utils_reload_cfg(const char* cfg, cJSON* root)
     utils_free(content);
     content = NULL;
 
-    return;
+    return TRUE;
 }
 
 char* utils_get_cfg_str_value(cJSON* root, const char* params_item, const char* prop_item)
@@ -185,15 +184,12 @@ char* utils_get_cfg_str_value(cJSON* root, const char* params_item, const char* 
         return NULL;
     }
     cJSON *prop_node = cJSON_GetObjectItem(params_node, prop_item);
-    if (prop_node)
+    if (!prop_node)
     {
-        int len = strlen(prop_node->valuestring);
-        prop_item_val = (char*)utils_calloc(len + 1);
-        memcpy(prop_item_val, prop_node->valuestring, len);
-        prop_item_val[len] = '\0';
+        return NULL;
     }
 
-    return prop_item_val;
+    return prop_node->valuestring;
 }
 
 double utils_get_cfg_number_value(cJSON* root, const char* params_item, const char* prop_item)
@@ -214,7 +210,7 @@ double utils_get_cfg_number_value(cJSON* root, const char* params_item, const ch
         return 0;
     }
     
-    return cJSON_GetNumberValue(prop_node);
+    return prop_node->valueint;
 }
 
 BOOL utils_set_cfg_str_value(cJSON* root, const char* cfg, const char* params_item, const char* prop_item, const char* value)
@@ -233,20 +229,35 @@ BOOL utils_set_cfg_str_value(cJSON* root, const char* cfg, const char* params_it
     cJSON *params_node = cJSON_GetObjectItem(root, params_item);
     if (!params_node)
     {
-        return FALSE;
+        int ret = cJSON_AddItemToObject(root, params_item, params_node = cJSON_CreateObject());
+        if (ret == 0)
+        {
+            return FALSE;
+        }
     }
+
     cJSON *prop_node = cJSON_GetObjectItem(params_node, prop_item);
     if(!prop_node)
     {
-        return FALSE;
+        if(NULL == value)
+        {
+            prop_node = cJSON_AddNullToObject(params_node, prop_item);
+            return TRUE;
+        }
+        else
+        {
+            prop_node = cJSON_AddStringToObject(params_node, prop_item, value);
+        }
+        
+        if(prop_node == NULL)
+        {
+            return FALSE;
+        }
     }
-    
-    if (cJSON_SetValuestring(prop_node, value) == NULL)
+    else
     {
-        return FALSE;
+        return (cJSON_SetValuestring(prop_node, value) == NULL);
     }
-
-    utils_reload_cfg(cfg, root);
 
     return TRUE;
 }
@@ -264,17 +275,27 @@ BOOL utils_set_cfg_number_value(cJSON* root, const char* cfg, const char* params
     cJSON *params_node = cJSON_GetObjectItem(root, params_item);
     if (!params_node)
     {
-        return FALSE;
+        int ret = cJSON_AddItemToObject(root, params_item, params_node = cJSON_CreateObject());
+        if (ret == 0)
+        {
+            return FALSE;
+        }
     }
+
     cJSON *prop_node = cJSON_GetObjectItem(params_node, prop_item);
     if (!prop_node)
     {
-        return FALSE;
+        prop_node = cJSON_AddNumberToObject(params_node, prop_item, value);
+        if(prop_node == NULL)
+        {
+            return FALSE;
+        }
     }
-    cJSON_SetNumberValue(prop_node, value);
+    else
+    {
+        cJSON_SetNumberValue(prop_node, value);
+    }
 
-    utils_reload_cfg(cfg, root);
-    
     return TRUE;
 }
 
@@ -290,7 +311,7 @@ int utils_download_file(const char* url)
     
     http_handle = curl_easy_init();
     
-    char * filename = get_download_filename(url);
+    char * filename = separate_filename(url);
     if(filename == NULL)
     {
         return -1;
@@ -352,7 +373,127 @@ int utils_download_file(const char* url)
     return 0;
 }
 
-BOOL utils_post_json_data(const char *url, const char* json_data, void* out)
+int utils_upload_file(const char* url, const char* token, const char* local_file_path, void* out)
+{
+    CURL *curl;
+    CURLM *multi_handle;
+    int still_running;
+
+    if(NULL == url || NULL == local_file_path || NULL == token)
+    {
+        return -1;
+    }
+    //separate filename
+    char* filename = separate_filename(local_file_path);
+    if(NULL == filename)
+    {
+        return -1;
+    }
+    utils_print("upload file name is %s\n", filename);
+
+    struct curl_httppost *formpost = NULL;
+    struct curl_httppost *lastprt = NULL;
+    struct curl_slist *headerlist = NULL;
+    static const char buf[] = "Expect:";
+
+    curl_formadd(&formpost, &lastprt, CURLFORM_COPYNAME, "sendfile", CURLFORM_FILE, local_file_path, CURLFORM_END);
+    curl_formadd(&formpost, &lastprt, CURLFORM_COPYNAME, "filename", CURLFORM_COPYCONTENTS, filename, CURLFORM_END);
+    curl_formadd(&formpost, &lastprt, CURLFORM_COPYNAME, "submit", CURLFORM_COPYCONTENTS, "send", CURLFORM_END);
+
+    curl = curl_easy_init();
+    multi_handle = curl_multi_init();
+
+    //init custom header
+    headerlist = curl_slist_append(headerlist, buf);
+    curl_slist_append(headerlist, token);
+
+    if(curl && multi_handle)
+    {
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
+        curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_memory_cb);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)out);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);  
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+        
+        curl_multi_add_handle(multi_handle, curl);
+        curl_multi_perform(multi_handle, &still_running);
+
+        while (still_running)
+        {
+            struct timeval timeout;
+            int rc;
+            CURLMcode mc;
+
+            fd_set fdread;
+            fd_set fdwrite;
+            fd_set fdexcep;
+
+            int maxfd = -1;
+            long curl_timeo = -1;
+
+            FD_ZERO(&fdread);
+            FD_ZERO(&fdwrite);
+            FD_ZERO(&fdexcep);
+
+            timeout.tv_sec = 1;
+            timeout.tv_usec = 0;
+
+            curl_multi_timeout(multi_handle, &curl_timeo);
+            if(curl_timeo >= 0)
+            {
+                timeout.tv_sec = curl_timeo / 1000;
+                if(timeout.tv_sec > 1)
+                {
+                    timeout.tv_sec = 1;
+                }
+                else
+                {
+                    timeout.tv_usec = (curl_timeo % 1000) * 1000;
+                }
+            }
+            mc = curl_multi_fdset(multi_handle, &fdread, &fdwrite, &fdexcep, &maxfd);
+            if(mc != CURLM_OK)
+            {
+                utils_print("curl_multi_fdset() failed, code %d\n", mc);
+                break;
+            }
+
+            if(maxfd == -1)
+            {
+                struct timeval wait = {1, 100*1000};
+                rc = select(0, NULL, NULL, NULL, &wait);
+            }
+            else
+            {
+                rc = select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
+            }
+
+            switch (rc)
+            {
+            case -1:
+            break;
+            case 0:
+            default:
+                curl_multi_perform(multi_handle, &still_running);
+            break;
+            }
+        }
+        curl_multi_cleanup(multi_handle);
+        curl_easy_cleanup(curl);
+        curl_formfree(formpost);
+        curl_slist_free_all(headerlist);
+    }
+
+
+    utils_free(filename);
+
+    return 0;
+}
+
+BOOL utils_post_json_data(const char *url, const char* json_data, const char* header_content, void* out)
 {
     CURL *curl;
     CURLcode res;
@@ -363,6 +504,10 @@ BOOL utils_post_json_data(const char *url, const char* json_data, void* out)
     if(curl) 
     {
         headers = curl_slist_append(headers, "Content-Type:application/json;charset=UTF-8");
+        if(header_content != NULL)
+        {
+            curl_slist_append(headers, header_content);
+        }
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -446,4 +591,159 @@ END:
     }
 
     return name;
+}
+
+char* utils_date_to_string()
+{
+    const static char* CMD_GET_DATE = "date +\"%Y-%m-%d\"";
+    static char str_date[16] = {0};
+    char line[16] = {0};
+    FILE *fp = NULL;
+    fp = popen(CMD_GET_DATE, "r");
+    if(NULL != fp)
+    {
+        if(fgets(line, sizeof(line), fp) == NULL)
+        {
+            pclose(fp);
+            return NULL;
+        }
+        line[strlen(line)-1] = '\0';
+    }
+
+    pclose(fp);
+    strcpy(str_date, line);
+
+    return str_date;
+}
+
+char* utils_time_to_string()
+{
+    const static char* CMD_GET_TIME = "date +\"%Y-%m-%d %H:%M:%S\"";
+    static char str_time[24] = {0};
+    char line[24] = {0};
+    FILE *fp = NULL;
+    fp = popen(CMD_GET_TIME, "r");
+    if(NULL != fp)
+    {
+        if(fgets(line, sizeof(line), fp) == NULL)
+        {
+            pclose(fp);
+            return NULL;
+        }
+        line[strlen(line)-1] = '\0';
+    }
+
+    pclose(fp);
+    strcpy(str_time, line);
+
+    return str_time;
+}
+
+char* utils_get_file_md5sum(const char* file_name)
+{
+    // md5sum demo_config.sh | awk -F " " '{print $1}'
+    if(NULL == file_name)
+    {
+        return NULL;
+    }
+    char CMD_GET_MD5[256] = {0};
+    sprintf(CMD_GET_MD5, "md5sum %s|awk -F \" \" \'{print $1}\'", file_name);
+    static char str_md5[64] = {0};
+    char line[64] = {0};
+    FILE *fp = NULL;
+    fp = popen(CMD_GET_MD5, "r");
+    if(NULL != fp)
+    {
+        if(fgets(line, sizeof(line), fp) == NULL)
+        {
+            pclose(fp);
+            return NULL;
+        }
+        line[strlen(line)-1] = '\0';
+    }
+
+    pclose(fp);
+    strcpy(str_md5, line);
+
+    return str_md5;
+}
+
+unsigned long utils_get_file_size(const char* path)
+{
+    unsigned long file_size = 0;
+    FILE *fp = NULL;
+    
+    if(NULL == path)
+    {
+        return 0;
+    }
+
+    fp = fopen(path, "r");
+    if(NULL == fp)
+    {
+        return file_size;
+    }
+    fseek(fp, 0L, SEEK_END);
+    file_size = ftell(fp);
+    fclose(fp);
+
+    return file_size;
+}
+
+int utils_split_file_to_chunk(const char* path)
+{
+    int chunk_count = 0;
+    if(NULL == path)
+    {
+        return 0;;
+    }
+    //separate file name with suffix
+    char* full_name = separate_filename(path);
+    if(NULL == full_name)
+    {
+        return 0;
+    }
+    printf("full name is %s\n", full_name);
+    char* p = strchr(full_name, '.');
+    char file_name[64] = {0};
+    memcpy(file_name, full_name, strlen(p));
+    printf("file name is %s\n", file_name);
+    char* suffix = strrchr(full_name, '.');
+    if(NULL == suffix)
+    {
+        return 0;
+    }
+    suffix ++;
+    printf("suffix name is %s\n", suffix);
+
+    char CMD_CHUNK_DIR[256] = {0};
+    sprintf(CMD_CHUNK_DIR, "mkdir -p /userdata/chunk/%s_%s", file_name, suffix);
+    char CMD_SPLIT_FILE[256] = {0};
+    sprintf(CMD_SPLIT_FILE, "split -b 5m %s -a 3 /userdata/chunk/%s_%s/%s_%s_", path, file_name, suffix, file_name, suffix);
+    char CMD_COUNT_CHUNKS[256] = {0};
+    sprintf(CMD_COUNT_CHUNKS, "ls -l /userdata/chunk/%s_%s|wc -l", file_name, suffix);
+
+    system(CMD_CHUNK_DIR);
+    system(CMD_SPLIT_FILE);
+    
+    char line[64] = {0};
+    FILE *fp = NULL;
+    fp = popen(CMD_COUNT_CHUNKS, "r");
+    if(NULL != fp)
+    {
+        if(fgets(line, sizeof(line), fp) == NULL)
+        {
+            pclose(fp);
+            return 0;
+        }
+        chunk_count = atoi(line);
+    }
+    pclose(fp);
+    
+    //modify chunk file index 
+    char CMD_CHUNK_SERIAL[256] = {0};
+    sprintf(CMD_CHUNK_SERIAL, "sh /user/bin/modify_chunk_names.sh %s_%s", file_name, suffix);
+    system(CMD_CHUNK_SERIAL);
+
+    return chunk_count;
 }
