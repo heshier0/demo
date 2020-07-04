@@ -10,6 +10,8 @@
 
 
 static cJSON* g_cfg_root  = NULL;     //指向配置文件的Object
+static int g_children_unid = 0;
+static char g_desk_sn_code[64] = {0};
 
 void hxt_load_cfg()
 {
@@ -24,6 +26,30 @@ BOOL hxt_reload_cfg()
 void hxt_unload_cfg()
 {
     utils_unload_cfg(g_cfg_root);
+}
+
+void hxt_set_children_unid(const int unid)
+{
+    g_children_unid = unid;
+}
+
+int hxt_get_children_unid()
+{
+    return g_children_unid;
+}
+
+void hxt_set_desk_sn_code(const char* desk_code)
+{
+    if(desk_code != NULL)
+    {
+        strcpy(g_desk_sn_code, desk_code);
+    }
+    
+}
+
+char* hxt_get_desk_sn_code()
+{
+    return g_desk_sn_code;
 }
 
 //data must json formatted data
@@ -212,6 +238,31 @@ int hxt_get_alarm_type_cfg(const int unid)
 
     return utils_get_cfg_number_value(g_cfg_root, child_index, "alarmType");
 }
+
+char* hxt_get_wifi_ssid_cfg()
+{
+    return utils_get_cfg_str_value(g_cfg_root, "wifi", "ssid");
+}
+
+char* hxt_get_wifi_bssid_cfg()
+{
+    return utils_get_cfg_str_value(g_cfg_root, "wifi", "bssid");
+}
+
+char* hxt_get_wifi_pwd_cfg()
+{
+    return utils_get_cfg_str_value(g_cfg_root, "wifi", "pwd");
+}
+
+char* hxt_get_wifi_check_code_cfg()
+{
+    return utils_get_cfg_str_value(g_cfg_root, "wifi", "checkCode");
+}
+
+char* hxt_get_desk_code_cfg()
+{
+    return utils_get_cfg_str_value(g_cfg_root, "desk", "deskCode");
+}
 //set 
 BOOL hxt_set_desk_uuid_cfg(const char* value)
 {
@@ -219,8 +270,8 @@ BOOL hxt_set_desk_uuid_cfg(const char* value)
     {
         return FALSE;
     }
-    utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "desk", "uuid", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "desk", "uuid", value);
+     
 }
 
 BOOL hxt_set_server_url_cfg(const char* value)
@@ -229,8 +280,7 @@ BOOL hxt_set_server_url_cfg(const char* value)
     {
         return FALSE;
     }
-    utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "url", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "url", value);
 }
 
 BOOL hxt_set_api_version_cfg(const char* value)
@@ -239,8 +289,7 @@ BOOL hxt_set_api_version_cfg(const char* value)
     {
         return FALSE;
     }    
-    utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "api_ver", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "api_ver", value);
 }
 
 BOOL hxt_set_token_cfg(const char* value)
@@ -249,8 +298,7 @@ BOOL hxt_set_token_cfg(const char* value)
     {
         return FALSE;
     }       
-    utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "token", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "token", value);
 }
 
 BOOL hxt_set_websocket_url_cfg(const char* value)
@@ -260,8 +308,7 @@ BOOL hxt_set_websocket_url_cfg(const char* value)
         return FALSE;
     }
 
-    utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "websocketUrl", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "websocketUrl", value);
 }
 
 BOOL hxt_set_upload_host_url_cfg(const char* value)
@@ -271,8 +318,7 @@ BOOL hxt_set_upload_host_url_cfg(const char* value)
         return FALSE;
     }
     
-    utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "uploadHostUrl", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "uploadHostUrl", value);
 }
 
 BOOL hxt_set_upgrade_pack_url_cfg(const char* value)
@@ -282,8 +328,7 @@ BOOL hxt_set_upgrade_pack_url_cfg(const char* value)
         return FALSE;
     }
 
-    utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "upgradePackUrl", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "upgradePackUrl", value);
 }
 
 BOOL hxt_set_alarm_file_url_cfg(const  char* value)
@@ -292,62 +337,52 @@ BOOL hxt_set_alarm_file_url_cfg(const  char* value)
     {
         return FALSE;
     }
-    utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "alramFileUrl", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "server", "alramFileUrl", value);
 }
 
 BOOL hxt_set_posture_judge_cfg(int value)
 {
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "judgeTime", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "judgeTime", value);
 }
 
 BOOL hxt_set_video_length_cfg(int value)
 {
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "videoLength", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "videoLength", value);
 }
 
 BOOL hxt_set_video_ratio_cfg(int value)
 {
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "vidoeRatio", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "vidoeRatio", value);
 }
 
 BOOL hxt_set_video_count_cfg(int value)
 {
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "videoCount", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "videoCount", value);
 }
 
 BOOL hxt_set_photo_count_cfg(int value)
 {
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "photoCount", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "photoCount", value);
 }
 
 BOOL hxt_set_alarm_unid_cfg(int value)
 {
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "alarmUnid", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "device", "alarmUnid", value);
 }
 
 BOOL hxt_set_version_id_cfg(int value)
 {
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "version", "versionId", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "version", "versionId", value);
 }
 
 BOOL hxt_set_version_cfg(const char* value)
 {
-    utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "version", "versionNo", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "version", "versionNo", value);
 }
 
 BOOL hxt_set_parent_unid_cfg(int value)
 {
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "user", "parentId", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, "user", "parentId", value);
 }
 
 BOOL hxt_set_study_mode_cfg(const int unid, const int value)
@@ -355,8 +390,7 @@ BOOL hxt_set_study_mode_cfg(const int unid, const int value)
     char child_index[64] = {0};
     sprintf(child_index, "child_%d", unid);
 
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, child_index, "studyMode", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, child_index, "studyMode", value);
 }
 
 BOOL hxt_set_alarm_type_cfg(const int unid, const int value)
@@ -364,6 +398,53 @@ BOOL hxt_set_alarm_type_cfg(const int unid, const int value)
     char child_index[64] = {0};
     sprintf(child_index, "child_%d", unid);
 
-    utils_set_cfg_number_value(g_cfg_root, HXT_CFG, child_index, "alarmType", value);
-    return hxt_reload_cfg();
+    return utils_set_cfg_number_value(g_cfg_root, HXT_CFG, child_index, "alarmType", value);
+}
+
+//wifi
+BOOL hxt_set_wifi_ssid_cfg(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }
+
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "wifi", "ssid", value);
+}
+
+BOOL hxt_set_wifi_bssid_cfg(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "wifi", "bssid", value);
+}
+
+BOOL hxt_set_wifi_pwd_cfg(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "wifi", "pwd", value);
+}
+
+BOOL hxt_set_wifi_check_code_cfg(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "wifi", "checkCode", value);
+}
+
+BOOL hxt_set_desk_code_cfg(const char* value)
+{
+    if(NULL == value)
+    {
+        return FALSE;
+    }
+
+    return utils_set_cfg_str_value(g_cfg_root, HXT_CFG, "desk", "deskCode", value);
 }

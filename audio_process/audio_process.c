@@ -18,7 +18,7 @@ int main(int argc, char **argv)
     if (hxt_get_token_cfg() == NULL)
     {
         utils_print("send request to get token\n");
-        hxt_get_token();
+        hxt_get_token_request();
     }
     
     hxt_websocket_start();
