@@ -25,7 +25,7 @@ static void parse_server_config_data(void *data)
     item = cJSON_GetObjectItem(root, "targetId");
     item = cJSON_GetObjectItem(root, "dataType");
     int data_type = item->valueint;
-    switch(data_type == 0)
+    switch(data_type)
     {
      case 1:
         item = cJSON_GetObjectItem(root, "data");
@@ -92,6 +92,7 @@ static void parse_server_config_data(void *data)
     case 0:
     default:
         //connect OK, do nothing
+        utils_print("websocket connect ok\n");
     break;  
     }
    

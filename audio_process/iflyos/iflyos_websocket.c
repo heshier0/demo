@@ -44,7 +44,7 @@ static void send_pcm_cb(void *data)
             if (g_stop_capture)
             {
                 printf("To send END flag !!!!!\n");
-                cl->send(cl, "__END__", 7, UWSC_OP_BINARY);
+                cl->send(cl, "__END__", strlen("__END__"), UWSC_OP_BINARY);
                 g_stop_capture = 0;
             }
         }
