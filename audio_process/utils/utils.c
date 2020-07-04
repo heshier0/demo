@@ -1,12 +1,32 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <unistd.h>
+#include <fcntl.h>
 #include <cJSON.h>
 #include <curl/curl.h>
 #include <curl/mprintf.h>
 
 #include "utils.h"
+
+static int open_mp3_fifo(const char* fifo_name)
+{
+    (void*)fifo_name;
+    const char *mp3_fifo = "/tmp/my_mp3_fifo";
+    int fd = -1; 
+    if(access(mp3_fifo, F_OK) == -1)
+    {
+        int result = mkfifo(mp3_fifo, 0777);
+        if(result != 0)
+        {
+            printf("could not create fifo %s\n", mp3_fifo);
+            return -1;
+        }
+    }
+    fd = open(mp3_fifo, O_WRONLY);
+
+    return fd;
+}
 
 static char* separate_filename(const char *url)
 {
@@ -63,6 +83,18 @@ static size_t write_memory_cb(void *contents, size_t size, size_t nmemb, void *u
     mem->memory[mem->size] = 0;
 
     return realsize;
+}
+
+static size_t write_file_data(void *ptr, size_t size, size_t nmemb, void *stream) 
+{
+    if(NULL == stream)
+    {
+        utils_print("no file opened\n");
+        return 0;
+    }
+    size_t written = fwrite(ptr, size, nmemb, (FILE*)stream);
+    utils_print("written %d bytes this turn\n", (int)written);
+    return written;
 }
 
 cJSON* utils_load_cfg(const char* cfg)
@@ -299,6 +331,141 @@ BOOL utils_set_cfg_number_value(cJSON* root, const char* cfg, const char* params
     return TRUE;
 }
 
+int utils_send_mp3_voice(const char *url)
+{
+    CURL *curl_handle;
+    CURLM *multi_handle;
+ 
+    int still_running = 0; /* keep number of running handles */ 
+    int repeats = 0;
+    
+    PostMemCb chunk;
+    chunk.memory = malloc(1);
+    chunk.size = 0;
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_handle = curl_easy_init();
+    
+    //FILE* out = fopen("/tmp/my_mp3_fifo", "wb");
+    FILE *out = fopen("/user/media/welcome.mp3", "wb");
+    if(NULL == out)
+    {
+        utils_print("open /tmp/my_mp3_fifo failed\n");
+    }
+    
+    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+    curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1);
+    curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);  
+    //curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0); 
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_file_data);
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void*)out);
+   // curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "haoxuetong/1.0.0");
+
+    multi_handle = curl_multi_init();
+    curl_multi_add_handle(multi_handle, curl_handle);
+    curl_multi_perform(multi_handle, &still_running);
+    while(still_running)
+    {
+        utils_print("WTF !!!!!\n");
+        CURLMcode mc; 
+        int numfds;
+        utils_print("1\n");
+        mc = curl_multi_wait(multi_handle, NULL, 0, 1000, &numfds);
+        utils_print("2\n");
+        if(mc != CURLM_OK) 
+        {
+            utils_print("curl_multi_wait() failed, code %d\n", (int)mc);
+            break;
+        }
+    
+        if(!numfds) 
+        {
+            repeats++;
+            if(repeats > 1) 
+            {
+                usleep(100);
+            }
+        }
+        else
+        {
+            repeats = 0;
+        }
+        utils_print("3\n");
+        curl_multi_perform(multi_handle, &still_running);
+        utils_print("4\n");
+    }
+    utils_print("Holy shit !!!!!\n");
+    if(out != NULL)
+    {
+        fclose(out);
+        out = NULL;
+    }
+
+    curl_multi_remove_handle(multi_handle, curl_handle);
+    curl_easy_cleanup(curl_handle);
+    curl_multi_cleanup(multi_handle);
+    curl_global_cleanup();
+
+    return 0;
+}
+
+/*
+int utils_send_mp3_voice(const char *url)
+{
+    CURL *curl_handle;
+    CURLcode res;
+
+    if(NULL == url)
+    {
+        return -1;
+    }
+
+    PostMemCb chunk;
+    chunk.memory = malloc(1);
+    chunk.size = 0;
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_handle = curl_easy_init();
+
+    printf("mp3 url is %s\n", url);
+    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 5);
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_memory_cb); 
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void*)&chunk);
+    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "haoxuetong/1.0.0");
+    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);  
+    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+    
+    res = curl_easy_perform(curl_handle);
+    if(res != CURLE_OK) 
+    {
+        utils_print("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+    }
+    else 
+    {
+        printf("%lu bytes retrieved\n", (unsigned long)chunk.size);
+        int fd = open_mp3_fifo(NULL); 
+        int count = 0, remain_count = chunk.size;
+        char* ptr = chunk.memory;
+        while( remain_count > 0)
+        {
+            count = write(fd, ptr, 640);   
+            printf("write %d bytes to my_mp3_fifo\n", count);
+            remain_count -= count; 
+            ptr += count;      
+        }
+    }
+
+    curl_easy_cleanup(curl_handle);
+
+    free(chunk.memory);
+
+    curl_global_cleanup();
+
+    return 0;
+}
+*/
 int utils_download_file(const char* url)
 {
     CURL *http_handle;

@@ -26,17 +26,17 @@ int main(int argc, char **argv)
     //     hxt_websocket_start();
     //     return 0;
     // }
-
-    pid_t iflyos_pid = fork();
-    if (iflyos_pid == 0)
-    {
-        iflyos_websocket_start();
-        return 0;
-    }
+    iflyos_websocket_start();
+    // pid_t iflyos_pid = fork();
+    // if (iflyos_pid == 0)
+    // {
+    //     iflyos_websocket_start();
+    //     return 0;
+    // }
     
-    int st1, st2;
-    // waitpid(hxt_pid, &st1, 0);
-    waitpid(iflyos_pid, &st2, 0);
+    // int st1, st2;
+    // // waitpid(hxt_pid, &st1, 0);
+    // waitpid(iflyos_pid, &st2, 0);
 
     hxt_unload_cfg();
 
