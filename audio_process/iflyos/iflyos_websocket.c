@@ -2,11 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pthread.h>
 
-#include <uwsc.h>
+#include <curl/curl.h>
+#include <curl/mprintf.h>
+
+#include <uwsc/uwsc.h>
 
 #include "utils.h"
 #include "iflyos_defines.h"
@@ -14,7 +17,7 @@
 static int g_sampling = 1;
 static int g_stop_capture = 0;
 
-static void send_pcm_cb(void *data)
+static void thread_send_pcm_cb(void *data)
 {
     if (NULL == data)
     {
@@ -30,24 +33,28 @@ static void send_pcm_cb(void *data)
     {
         return;
     }
-    printf("*********************\n");
     while(g_sampling)
     {
         read_count = read(fd, pcm_buf, 640);
         if (read_count >0)
         {   
-            printf("To send pcm data....\n");
+            //send request 
             char *req = iflyos_create_audio_in_request();
+            printf("To send request....\n");
             cl->send(cl, req, strlen(req), UWSC_OP_TEXT);
-            cl->send(cl, pcm_buf, 640, UWSC_OP_BINARY);
             free(req);
+            //send data 
+            printf("To send pcm bin data....\n");
+            cl->send(cl, pcm_buf, 640, UWSC_OP_BINARY);
+            
             if (g_stop_capture)
             {
                 printf("To send END flag !!!!!\n");
-                cl->send(cl, "__END__", strlen("__END__"), UWSC_OP_BINARY);
+                cl->send(cl, "_END_", strlen("_END_"), UWSC_OP_BINARY);
                 g_stop_capture = 0;
             }
         }
+        usleep(100);
     }
 
     close(fd);
@@ -57,13 +64,13 @@ static void uwsc_onopen(struct uwsc_client *cl)
 {
     uwsc_log_info("onopen\n");
 
-    //added by hekai
+    // added by hekai
     iflyos_init_request();
 
     pthread_t tid;
-    pthread_create(&tid, NULL, send_pcm_cb, (void*)cl);
+    pthread_create(&tid, NULL, thread_send_pcm_cb, (void*)cl);
     pthread_detach(tid);
-    //end added
+    // end added
 }
 
 static void uwsc_onmessage(struct uwsc_client *cl,
@@ -76,6 +83,7 @@ static void uwsc_onmessage(struct uwsc_client *cl,
     } 
     else 
     {
+
         printf("[%.*s]\n", (int)len, (char *)data);
         char* name = iflyos_get_response_name(data);
         if (NULL == name)
@@ -108,6 +116,7 @@ static void uwsc_onclose(struct uwsc_client *cl, int code, const char *reason)
     iflyos_deinit_request();
     g_sampling = 0;
     //end added
+    
     ev_break(cl->loop, EVBREAK_ALL);
 }
 
@@ -125,7 +134,7 @@ int iflyos_websocket_start()
     struct ev_signal signal_watcher;
 	int ping_interval = 10;	/* second */
     struct uwsc_client *cl;
-    
+
     iflyos_load_cfg();
     char* device_id = iflyos_get_device_id();
     char* token = iflyos_get_token();
@@ -135,7 +144,7 @@ int iflyos_websocket_start()
 
     iflyos_free(device_id);
     iflyos_free(token);
-   
+    
     cl = uwsc_new(loop, ifly_url, ping_interval, NULL);
     if (!cl)
         return -1;
@@ -152,7 +161,6 @@ int iflyos_websocket_start()
 
     ev_run(loop, 0);
 
-    free(cl);
-       
+    free(cl);       
     return 0;
 }

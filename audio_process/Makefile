@@ -15,18 +15,24 @@ INCS            = -I$(ROOT_DIR)/. \
 		  $(foreach tmp,$(SUBDIRS),-I$(ROOT_DIR)/$(tmp)/.) \
                   -I/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/include \
                   -I/mnt/g/workspace/plugins/libev/include \
-                  -I/mnt/g/workspace/plugins/libuwsc/include \
                   -I/mnt/g/workspace/plugins/cjson/include    \
+                  -I/mnt/g/workspace/plugins/libuwsc/include \
                   -I/mnt/g/workspace/plugins/libcurl/include \
-                  -I/mnt/g/workspace/plugins/openssl/include 
+                  -I/mnt/g/workspace/plugins/openssl/include \
+		  -I/mnt/g/workspace/plugins/libmbedtls/include
+                  
 
 LIBS            = -L/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/lib -lm -ldl -pthread \
                   -L/mnt/g/workspace/plugins/libev/lib -lev \
-                  -L/mnt/g/workspace/plugins/libuwsc/lib -luwsc \
                   -L/mnt/g/workspace/plugins/cjson/lib -lcjson \
+                  -L/mnt/g/workspace/plugins/libuwsc/lib -luwsc \
                   -L/mnt/g/workspace/plugins/libcurl/lib -lcurl \
                   -L/mnt/g/workspace/plugins/openssl/lib -lssl \
-                  -L/mnt/g/workspace/plugins/openssl/lib -lcrypto   
+                  -L/mnt/g/workspace/plugins/openssl/lib -lcrypto \
+                  -L/mnt/g/workspace/plugins/libmbedtls/lib -lmbedx509 \
+                  -L/mnt/g/workspace/plugins/libmbedtls/lib -lmbedtls \
+                  -L/mnt/g/workspace/plugins/libmbedtls/lib -lmbedcrypto
+		    
 
 CFLAGS          = -DLINUX -DDEBUG -Wno-multichar -Wimplicit-function-declaration \
                   -fPIC -O2 -fexpensive-optimizations -frename-registers -fomit-frame-pointer 

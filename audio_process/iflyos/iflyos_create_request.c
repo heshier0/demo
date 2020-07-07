@@ -262,7 +262,7 @@ char* iflyos_create_txt_in_request()
     cJSON_AddStringToObject(request_header, "name", recog_text_in);
     cJSON_AddStringToObject(request_header, "request_id", "");
 
-    cJSON_AddStringToObject(request_payload, "query", "给我唱首歌吧");
+    cJSON_AddStringToObject(request_payload, "query", "今天天气怎么样");
     cJSON_AddBoolToObject(request_payload, "with_tts", TRUE);
     
     char* request = cJSON_Print(root);

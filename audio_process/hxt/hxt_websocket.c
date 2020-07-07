@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <uwsc.h>
+#include <uwsc/uwsc.h>
 
 #include "utils.h"
 #include "hxt_defines.h"

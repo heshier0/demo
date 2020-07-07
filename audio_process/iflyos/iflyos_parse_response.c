@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cJSON.h>
 
+#include "utils.h"
 #include "iflyos_defines.h"
 
 #define IFLYOS_REPONSES             ("iflyos_responses")
