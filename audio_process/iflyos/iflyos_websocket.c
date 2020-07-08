@@ -37,11 +37,13 @@ static void thread_send_pcm_cb(void *data)
         {   
             //send request 
             char *req = iflyos_create_audio_in_request();
-            printf("To send request....\n");
+            utils_print("voice request is %s\n", req);
+           //utils_printf("To send request....\n");
             cl->send(cl, req, strlen(req), UWSC_OP_TEXT);
             free(req);
             //send data 
-            printf("To send pcm bin data....\n");
+            usleep(100);
+            //utils_printf("To send pcm bin data....\n");
             cl->send(cl, pcm_buf, 640, UWSC_OP_BINARY);
             
             if (g_stop_capture)
