@@ -6,9 +6,6 @@
 #include <sys/stat.h>
 #include <pthread.h>
 
-#include <curl/curl.h>
-#include <curl/mprintf.h>
-
 #include <uwsc/uwsc.h>
 
 #include "utils.h"
@@ -83,7 +80,6 @@ static void uwsc_onmessage(struct uwsc_client *cl,
     } 
     else 
     {
-
         printf("[%.*s]\n", (int)len, (char *)data);
         char* name = iflyos_get_response_name(data);
         if (NULL == name)
@@ -136,12 +132,11 @@ int iflyos_websocket_start()
     struct uwsc_client *cl;
 
     iflyos_load_cfg();
-    char* device_id = iflyos_get_device_id();
-    char* token = iflyos_get_token();
 
     char ifly_url[255] = {0};
-    sprintf(ifly_url, "wss://ivs.iflyos.cn/embedded/v1?token=%s&device_id=%s", token, device_id);
-
+    char* device_id = iflyos_get_device_id();
+    char* token = iflyos_get_token();
+    sprintf(ifly_url, "wss://ivs.iflyos.cn/embedded/v1?token=%s&device_id=%s", token, device_id); 
     iflyos_free(device_id);
     iflyos_free(token);
     
@@ -155,7 +150,7 @@ int iflyos_websocket_start()
     cl->onmessage = uwsc_onmessage;
     cl->onerror = uwsc_onerror;
     cl->onclose = uwsc_onclose;
-
+    
     ev_signal_init(&signal_watcher, signal_cb, SIGINT);
     ev_signal_start(loop, &signal_watcher);
 

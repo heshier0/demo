@@ -1,97 +1,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <cJSON.h>
-#include <curl/curl.h>
-#include <curl/mprintf.h>
 
 #include "utils.h"
 
-/*
-//init for libcurl multithread
-#include <openssl/crypto.h>
-static pthread_mutex_t *lockarray;
-static void lock_callback(int mode, int type, char* file, int line)
-{
-    (void)file;
-    (void)line;
-
-    if(mode * CRYPTO_LOCK)
-    {
-        pthread_mutex_lock(&(lockarray[type]));
-    }
-    else
-    {
-        pthread_mutex_unlock(&(lockarray[type]));
-    }
-}
-
-static unsigned long thread_id(void)
-{
-    unsigned long ret;
-    ret = (unsigned long)pthread_self();
-
-    return ret;
-}
-
-static void init_locks(void)
-{
-    int i;
-
-    lockarray = (pthread_mutex_t*)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
-    for (i = 0; i<CRYPTO_num_locks(); i++)
-    {
-        pthread_mutex_init(&(lockarray[i]), NULL);
-    }
-    CRYPTO_set_id_callback((unsigned long(*)())thread_id);
-    CRYPTO_set_locking_callback((void(*)())lock_callback);
-}
-
-static void kill_locks(void)
-{
-    int i;
-    CRYPTO_set_locking_callback(NULL);
-    for (i = 0; i<CRYPTO_num_locks(); i++)
-    {
-        pthread_mutex_destroy(&(lockarray[i]));
-    }
-    OPENSSL_free(lockarray);
-}
-//
-
-void utils_init_plugins()
-{
-    curl_global_init(CURL_GLOBAL_ALL);
-    init_locks();
-}
-
-void utils_deinit_plugins()
-{
-    kill_locks();
-    curl_global_cleanup();
-}
-*/
-
-static int open_mp3_fifo(const char* fifo_name)
-{
-    (void*)fifo_name;
-    const char *mp3_fifo = "/tmp/my_mp3_fifo";
-    int fd = -1; 
-    if(access(mp3_fifo, F_OK) == -1)
-    {
-        int result = mkfifo(mp3_fifo, 0777);
-        if(result != 0)
-        {
-            printf("could not create fifo %s\n", mp3_fifo);
-            return -1;
-        }
-    }
-    fd = open(mp3_fifo, O_WRONLY);
-
-    return fd;
-}
+#define MP3_FIFO ("/tmmp/my_mp3_fifo")
 
 static char* separate_filename(const char *url)
 {
@@ -129,37 +47,26 @@ static char* separate_filename(const char *url)
     return filename;
 }
 
-static size_t write_memory_cb(void *contents, size_t size, size_t nmemb, void *userp)
+static BOOL check_system_cmd_result(const pid_t status)
 {
-    size_t realsize = size * nmemb;
-    PostMemCb *mem = (PostMemCb *)userp;
-
-    char *ptr = realloc(mem->memory, mem->size + realsize + 1);
-    if(ptr == NULL) 
+    pid_t res = (pid_t) status;
+    if(-1 == res)
     {
-    /* out of memory! */ 
-        printf("not enough memory (realloc returned NULL)\n");
-        return 0;
+        utils_print("system cmd execute failed.\n");
+        return FALSE;
+    }
+    else
+    {
+        if(WIFEXITED(status))
+        {
+            if(0 == WEXITSTATUS(status))      
+            {
+                return TRUE;
+            }  
+        }
     }
 
-    mem->memory = ptr;
-    memcpy(&(mem->memory[mem->size]), contents, realsize);
-    mem->size += realsize;
-    mem->memory[mem->size] = 0;
-
-    return realsize;
-}
-
-static size_t write_file_data(void *ptr, size_t size, size_t nmemb, void *stream) 
-{
-    if(NULL == stream)
-    {
-        utils_print("no file opened\n");
-        return 0;
-    }
-    size_t written = fwrite(ptr, size, nmemb, (FILE*)stream);
-    utils_print("written %d bytes this turn\n", (int)written);
-    return written;
+    return FALSE;
 }
 
 cJSON* utils_load_cfg(const char* cfg)
@@ -396,115 +303,43 @@ BOOL utils_set_cfg_number_value(cJSON* root, const char* cfg, const char* params
     return TRUE;
 }
 
-int utils_send_mp3_voice(const char *url)
+BOOL utils_send_mp3_voice(const char *url)
 {
-    CURL *curl_handle;
-    CURLcode res;
-
-    if(NULL == url)
-    {
-        return -1;
-    }
-
-    PostMemCb chunk;
-    chunk.memory = malloc(1);
-    chunk.size = 0;
-
-    curl_handle = curl_easy_init();
-
-    printf("mp3 url is %s\n", url);
-    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-    curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 5);
-    curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_memory_cb); 
-    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void*)&chunk);
-    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "haoxuetong/1.0.0");
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);  
-    curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+    char cmd[256] = {0};
+    sprintf(cmd, "curl --insecure -s -o %s %s", MP3_FIFO, url);
+    pid_t status = system(cmd);
     
-    res = curl_easy_perform(curl_handle);
-    if(res != CURLE_OK) 
-    {
-        utils_print("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-    }
-    else 
-    {
-        printf("%lu bytes retrieved\n", (unsigned long)chunk.size);
-        int fd = open_mp3_fifo(NULL); 
-        int count = 0, remain_count = chunk.size;
-        char* ptr = chunk.memory;
-        while( remain_count > 0)
-        {
-            count = write(fd, ptr, 640);   
-            printf("write %d bytes to my_mp3_fifo\n", count);
-            remain_count -= count; 
-            ptr += count;      
-        }
-    }
-
-    curl_easy_cleanup(curl_handle);
-
-    free(chunk.memory);
-
-    return 0;
+    return check_system_cmd_result(status);
 }
 
-int utils_download_file(const char* url)
+BOOL utils_download_file(const char *url, char *out_buffer, int buffer_length)
 {
-    CURL *http_handle;
-    CURLM *multi_handle;
- 
-    int still_running = 0; /* keep number of running handles */ 
-    int repeats = 0;
-    
-    http_handle = curl_easy_init();
+    if (NULL == url || NULL == out_buffer)
+    {
+        return FALSE;
+    }
 
     char * filename = separate_filename(url);
     if(filename == NULL)
     {
-        return -1;
+        return FALSE;
     }
 
-    FILE *out = fopen(filename, "wb");
-    curl_easy_setopt(http_handle, CURLOPT_NOSIGNAL, 1);
-    curl_easy_setopt(http_handle, CURLOPT_WRITEDATA, out); 
-    curl_easy_setopt(http_handle, CURLOPT_URL, url);
-    
-    multi_handle = curl_multi_init();
-    curl_multi_add_handle(multi_handle, http_handle);
-    curl_multi_perform(multi_handle, &still_running);
- 
-    while(still_running)
+    char CMD_DOWNLOAD_FILE[512] = {0};
+    sprintf(CMD_DOWNLOAD_FILE, "curl --insecure -s -o %s %s", filename, url);
+
+    FILE *fp = NULL;
+    fp = popen(CMD_DOWNLOAD_FILE, "r");
+    if(NULL != fp)
     {
-        CURLMcode mc; /* curl_multi_wait() return code */ 
-        int numfds;
-    
-        /* wait for activity, timeout or "nothing" */ 
-        mc = curl_multi_wait(multi_handle, NULL, 0, 1000, &numfds);
-    
-        if(mc != CURLM_OK) 
+        if(fgets(out_buffer, buffer_length, fp) == NULL)
         {
-            fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
-            break;
+            pclose(fp);
+            return FALSE;
         }
-    
-        if(!numfds) 
-        {
-            repeats++; /* count number of repeated zero numfds */ 
-            if(repeats > 1) 
-            {
-                usleep(100); /* sleep 100 milliseconds */ 
-            }
-        }
-        else
-            repeats = 0;
-    
-        curl_multi_perform(multi_handle, &still_running);
+        out_buffer[buffer_length-1] = '\0';
     }
- 
-    curl_multi_remove_handle(multi_handle, http_handle);
-    curl_easy_cleanup(http_handle);
-    curl_multi_cleanup(multi_handle);
+    pclose(fp);
 
     if(filename != NULL)
     {
@@ -512,173 +347,62 @@ int utils_download_file(const char* url)
         filename = NULL;
     }
 
-    if(out != NULL)
-    {
-        fclose(out);
-        out = NULL;
-    }
-    
-    return 0;
+    return TRUE;
 }
 
-int utils_upload_file(const char* url, const char* token, const char* local_file_path, void* out)
+BOOL utils_upload_file(const char* url, const char* header, const char* local_file_path, char* out_buffer, int buffer_length)
 {
-    CURL *curl;
-    CURLM *multi_handle;
-    int still_running;
-
-    if(NULL == url || NULL == local_file_path || NULL == token)
+    if(NULL == url || NULL == local_file_path || NULL == out_buffer)
     {
-        return -1;
-    }
-    //separate filename
-    char* filename = separate_filename(local_file_path);
-    if(NULL == filename)
-    {
-        return -1;
-    }
-    utils_print("upload file name is %s\n", filename);
-
-    struct curl_httppost *formpost = NULL;
-    struct curl_httppost *lastprt = NULL;
-    struct curl_slist *headerlist = NULL;
-    static const char buf[] = "Expect:";
-
-    curl_formadd(&formpost, &lastprt, CURLFORM_COPYNAME, "sendfile", CURLFORM_FILE, local_file_path, CURLFORM_END);
-    curl_formadd(&formpost, &lastprt, CURLFORM_COPYNAME, "filename", CURLFORM_COPYCONTENTS, filename, CURLFORM_END);
-    curl_formadd(&formpost, &lastprt, CURLFORM_COPYNAME, "submit", CURLFORM_COPYCONTENTS, "send", CURLFORM_END);
-
-    curl = curl_easy_init();
-    multi_handle = curl_multi_init();
-
-    //init custom header
-    headerlist = curl_slist_append(headerlist, buf);
-    curl_slist_append(headerlist, token);
-
-    if(curl && multi_handle)
-    {
-        curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
-        curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_memory_cb);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)out);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);  
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
-        
-        curl_multi_add_handle(multi_handle, curl);
-        curl_multi_perform(multi_handle, &still_running);
-
-        while (still_running)
-        {
-            struct timeval timeout;
-            int rc;
-            CURLMcode mc;
-
-            fd_set fdread;
-            fd_set fdwrite;
-            fd_set fdexcep;
-
-            int maxfd = -1;
-            long curl_timeo = -1;
-
-            FD_ZERO(&fdread);
-            FD_ZERO(&fdwrite);
-            FD_ZERO(&fdexcep);
-
-            timeout.tv_sec = 1;
-            timeout.tv_usec = 0;
-
-            curl_multi_timeout(multi_handle, &curl_timeo);
-            if(curl_timeo >= 0)
-            {
-                timeout.tv_sec = curl_timeo / 1000;
-                if(timeout.tv_sec > 1)
-                {
-                    timeout.tv_sec = 1;
-                }
-                else
-                {
-                    timeout.tv_usec = (curl_timeo % 1000) * 1000;
-                }
-            }
-            mc = curl_multi_fdset(multi_handle, &fdread, &fdwrite, &fdexcep, &maxfd);
-            if(mc != CURLM_OK)
-            {
-                utils_print("curl_multi_fdset() failed, code %d\n", mc);
-                break;
-            }
-
-            if(maxfd == -1)
-            {
-                struct timeval wait = {1, 100*1000};
-                rc = select(0, NULL, NULL, NULL, &wait);
-            }
-            else
-            {
-                rc = select(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
-            }
-
-            switch (rc)
-            {
-            case -1:
-            break;
-            case 0:
-            default:
-                curl_multi_perform(multi_handle, &still_running);
-            break;
-            }
-        }
-        curl_multi_cleanup(multi_handle);
-        curl_easy_cleanup(curl);
-        curl_formfree(formpost);
-        curl_slist_free_all(headerlist);
+        return FALSE;
     }
 
+    utils_print("upload file name is %s\n", local_file_path);
 
-    utils_free(filename);
+    char CMD_UPLOAD_FILE[512] = {0};
+    sprintf(CMD_UPLOAD_FILE, "curl --insecure -s -H \"%s\" -F \"file=@%s\" %s", header, local_file_path, url);
 
-    return 0;
-}
-
-BOOL utils_post_json_data(const char *url, const char* json_data, const char* header_content, void* out)
-{
-    CURL *curl;
-    CURLcode res;
-    struct curl_list* headers = NULL;
-
-    curl = curl_easy_init();
-    if(curl) 
+    FILE *fp = NULL;
+    fp = popen(CMD_UPLOAD_FILE, "r");
+    if(NULL != fp)
     {
-        headers = curl_slist_append(headers, "Content-Type:application/json;charset=UTF-8");
-        if(header_content != NULL)
+        if(fgets(out_buffer, buffer_length, fp) == NULL)
         {
-            curl_slist_append(headers, header_content);
-        }
-
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-        curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_POST, 1);
-        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_memory_cb); 
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)out);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);  
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
-
-        res = curl_easy_perform(curl);
-        if(res != CURLE_OK)
-        {
-            utils_print("curl_easy_perform() failed: %s\n",curl_easy_strerror(res));
+            pclose(fp);
             return FALSE;
         }
+        out_buffer[buffer_length-1] = '\0';
+    }
+    pclose(fp);
 
-        curl_slist_free_all(headers);
-        curl_easy_cleanup(curl);
+        
+    return TRUE;
+}
+
+BOOL utils_post_json_data(const char *url, const char* header_content, const char* json_data, char* out, int out_length)
+{
+
+    if (NULL == url || NULL == out)
+    {
+        return FALSE;
     }
 
+    char CMD_POST_JSON[512] = {0};
+    sprintf(CMD_POST_JSON, "curl --insecure -s -X POST -H \"Content-Type:application/json;charset=UTF-8\" -H \"%s\" -d \"%s\" %s", 
+                                header_content, json_data, url);
+
+    FILE *fp = NULL;
+    fp = popen(CMD_POST_JSON, "r");
+    if(NULL != fp)
+    {
+        if(fgets(out, out_length, fp) == NULL)
+        {
+            pclose(fp);
+            return FALSE;
+        }
+        out[out_length-1] = '\0';
+    }
+    pclose(fp);
 
     return TRUE;
 }

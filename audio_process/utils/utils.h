@@ -55,10 +55,10 @@ double utils_get_cfg_number_value(cJSON* root, const char* params_item, const ch
 BOOL utils_set_cfg_str_value(cJSON* root, const char* cfg, const char* params_item, const char* prop_item, const char* value);
 BOOL utils_set_cfg_number_value(cJSON* root, const char* cfg, const char* params_item, const char* prop_item, const double value);
 
-int utils_send_mp3_voice(const char *url);
-int utils_download_file(const char *url);
-int utils_upload_file(const char* url, const char* token, const char* local_file_path, void* out);
-BOOL utils_post_json_data(const char *url, const char* data, const char* header_content, void* out);
+BOOL utils_send_mp3_voice(const char *url);
+BOOL utils_download_file(const char *url, char *out_buffer, int buffer_length);
+BOOL utils_upload_file(const char* url, const char* header, const char* local_file_path, char* out_buffer, int buffer_length);
+BOOL utils_post_json_data(const char *url, const char* header_content, const char* json_data, char* out, int out_length);
 char* utils_get_response_value(const char* json_data, const char* root_name, const char* item_name, const char* sub_name, const char* last_node);
 unsigned long utils_get_file_size(const char* file_name);
 

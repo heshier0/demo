@@ -276,18 +276,16 @@ BOOL hxt_get_token_request()
     }
     utils_print("%s\n", json_data);
     //save response data
-    PostMemCb out;
-    out.memory = utils_malloc(1);
-    out.size = 0;
-    if(!utils_post_json_data(api_url, json_data, NULL, &out))
+    char *out = (char*)utils_malloc(1024*2);
+    if(!utils_post_json_data(api_url, json_data, NULL, out, 2048))
     {
         utils_print("post data send failed\n");
         goto CLEANUP1;
     } 
-    int status_code = hxt_get_reponse_status_code(out.memory);
+    int status_code = hxt_get_reponse_status_code((void*)out);
     if (status_code == RESPONSE_OK)
     {
-        hxt_get_token_response(&out);
+        hxt_get_token_response((void*)out);
         reported = TRUE;
     }
     else if(status_code == NO_REG)
@@ -297,7 +295,7 @@ BOOL hxt_get_token_request()
     } 
 
 CLEANUP1:    
-    utils_free(out.memory);
+    utils_free(out);
     utils_free(json_data);
 CLEANUP2:    
     cJSON_Delete(root);
@@ -336,16 +334,14 @@ BOOL hxt_report_info_request(int reportType, int cameraStatus)
     }
     utils_print("%s\n", json_data);
     //save response data
-    PostMemCb out;
-    out.memory = utils_malloc(1);
-    out.size = 0;
-    if(!utils_post_json_data(api_url, json_data, header, &out))
+    char *out = (char*)utils_malloc(1024);
+    if(!utils_post_json_data(api_url, json_data, header, out, 1024))
     {
         utils_print("post data send failed\n");
         goto CLEANUP1;
     } 
-    utils_print("response length is [%s]\n", out.memory);
-    int status_code = hxt_get_reponse_status_code(out.memory);
+    utils_print("response length is [%s]\n", out);
+    int status_code = hxt_get_reponse_status_code((void *)out);
     if (status_code == RESPONSE_OK)
     {
         reported = TRUE;
@@ -356,7 +352,7 @@ BOOL hxt_report_info_request(int reportType, int cameraStatus)
     }    
 
 CLEANUP1:  
-    utils_free(out.memory);
+    utils_free(out);
     utils_free(json_data);
 CLEANUP3:   
     cJSON_Delete(root);
@@ -388,20 +384,18 @@ BOOL hxt_file_upload_request(const char* filename, char* server_file_path)
     char* header = hxt_get_header_with_token();
     utils_print("auth:%s\n", header);
 
-    PostMemCb out;
-    out.memory = utils_malloc(1);
-    out.size = 0;
-    utils_upload_file(upload_url, header, filename, &out);
-    utils_print("[%s]\n", out.memory);
+    char* out = (char*)utils_malloc(1024);
+    utils_upload_file(upload_url, header, filename, out, 1024);
+    utils_print("[%s]\n", out);
 
-    int status_code = hxt_get_reponse_status_code(out.memory);
+    int status_code = hxt_get_reponse_status_code((void*)out);
     if (status_code == RESPONSE_OK)
     {
         uploaded = TRUE;
-        server_file_path = hxt_get_response_description(out.memory);
+        server_file_path = hxt_get_response_description((void*)out);
     }
 
-    utils_free(out.memory);
+    utils_free(out);
     utils_free(header);
     utils_free(upload_url);
 
@@ -446,16 +440,14 @@ BOOL hxt_study_report_request(int unid, ReportType type, int duration, const cha
     }
     utils_print("%s\n", json_data);
     //save response data
-    PostMemCb out;
-    out.memory = utils_malloc(1);
-    out.size = 0;
-    if(!utils_post_json_data(api_url, json_data, header, &out))
+    char *out = (char*)utils_malloc(1024);
+    if(!utils_post_json_data(api_url, json_data, header, out, 1024))
     {
         utils_print("post data send failed\n");
         goto CLEANUP1;
     } 
-    utils_print("response length is [%s]\n", out.memory);
-    int status_code = hxt_get_reponse_status_code(out.memory);
+    utils_print("response length is [%s]\n", out);
+    int status_code = hxt_get_reponse_status_code(out);
     if (status_code == RESPONSE_OK)
     {
         reported = TRUE;
@@ -466,7 +458,7 @@ BOOL hxt_study_report_request(int unid, ReportType type, int duration, const cha
     }    
 
 CLEANUP1:  
-    utils_free(out.memory);
+    utils_free(out);
     utils_free(json_data);
 CLEANUP3:   
     cJSON_Delete(root);
@@ -517,20 +509,18 @@ int hxt_get_max_chunk_request(const char* file_md5, const ExtType type)
     char* header = hxt_get_header_with_token();
 
     //save response data
-    PostMemCb out;
-    out.memory = utils_malloc(1);
-    out.size = 0;
-    if(!utils_post_json_data(api_url, NULL, header, &out))
+    char *out = (char*)utils_malloc(1024);
+    if(!utils_post_json_data(api_url, NULL, header, out, 1024))
     {
         utils_print("post data send failed\n");
         goto CLEANUP1;
     } 
-    utils_print("response length is [%s]\n", out.memory);
-    int status_code = hxt_get_reponse_status_code(out.memory);
-    BOOL passed = hxt_get_response_pass_status(out.memory);
+    utils_print("response length is [%s]\n", out);
+    int status_code = hxt_get_reponse_status_code(out);
+    BOOL passed = hxt_get_response_pass_status(out);
     if (status_code == RESPONSE_OK && passed)
     {
-        char* desc = hxt_get_response_description(out.memory);
+        char* desc = hxt_get_response_description(out);
         if(NULL == desc)
         {
             max_chunk = 0;
@@ -545,7 +535,7 @@ int hxt_get_max_chunk_request(const char* file_md5, const ExtType type)
     }    
 
 CLEANUP1:  
-    utils_free(out.memory);
+    utils_free(out);
 CLEANUP3:   
     utils_free(api_url);
     utils_free(header);
@@ -574,23 +564,21 @@ char* hxt_send_chunk_request(const char* file_md5, int chunk_idx, int max_chunk)
     char* header = hxt_get_header_with_token();
     utils_print("auth:%s\n", header);
 
-    PostMemCb out;
-    out.memory = utils_malloc(1);
-    out.size = 0;
+    char *out = (char*)utils_malloc(1024);
 
     //TODO get file name 
     char chunk_file[256] = {0};
-    
-    utils_upload_file(chunk_file, header, chunk_file, &out);
-    utils_print("[%s]\n", out.memory);
+    //???
+    utils_upload_file(chunk_file, header, chunk_file, out, 1024);
+    utils_print("[%s]\n", out);
 
-    int status_code = hxt_get_reponse_status_code(out.memory);
+    int status_code = hxt_get_reponse_status_code((void*)out);
     if (status_code == RESPONSE_OK)
     {
-        server_file_path = hxt_get_response_description(out.memory);
+        server_file_path = hxt_get_response_description((void*)out);
     }
 
-    utils_free(out.memory);
+    utils_free(out);
     utils_free(header);
     utils_free(upload_url);
 
@@ -633,17 +621,15 @@ BOOL hxt_merge_chunks_request(const char* file_path, ExtType type)
     char* header = hxt_get_header_with_token();
 
     //save response data
-    PostMemCb out;
-    out.memory = utils_malloc(1);
-    out.size = 0;
-    if(!utils_post_json_data(api_url, "", header, &out))
+    char *out = (char*)utils_malloc(1024);
+    if(!utils_post_json_data(api_url, "", header, out, 1024))
     {
         utils_print("post data send failed\n");
         goto CLEANUP1;
     } 
-    utils_print("response length is [%s]\n", out.memory);
-    int status_code = hxt_get_reponse_status_code(out.memory);
-    BOOL passed = hxt_get_response_pass_status(out.memory);
+    utils_print("response length is [%s]\n", out);
+    int status_code = hxt_get_reponse_status_code(out);
+    BOOL passed = hxt_get_response_pass_status(out);
     if (status_code == RESPONSE_OK)
     {
         //
@@ -655,7 +641,7 @@ BOOL hxt_merge_chunks_request(const char* file_path, ExtType type)
     }    
 
 CLEANUP1:  
-    utils_free(out.memory);
+    utils_free(out);
 CLEANUP3:   
     utils_free(api_url);
     utils_free(header);
@@ -690,26 +676,24 @@ BOOL hxt_check_wifi_data_request()
     }
     utils_print("%s\n", json_data);
     //save response data
-    PostMemCb out;
-    out.memory = utils_malloc(1);
-    out.size = 0;
-    if(!utils_post_json_data(api_url, json_data, "", &out))
+    char* out = (char*)utils_malloc(1024);
+    if(!utils_post_json_data(api_url, json_data, "", out, 1024))
     {
         utils_print("post data send failed\n");
         goto CLEANUP1;
     } 
-    utils_print("response length is [%s]\n", out.memory);
-    int status_code = hxt_get_reponse_status_code(out.memory);
+    utils_print("response length is [%s]\n", out);
+    int status_code = hxt_get_reponse_status_code(out);
     if (status_code == RESPONSE_OK)
     {
         reported = TRUE;
         
-        char* desc = hxt_get_response_description(out.memory);
+        char* desc = hxt_get_response_description(out);
         hxt_set_desk_sn_code(desc);
     } 
 
 CLEANUP1:  
-    utils_free(out.memory);
+    utils_free(out);
     utils_free(json_data);
 CLEANUP3:   
     cJSON_Delete(root);
@@ -747,16 +731,14 @@ BOOL hxt_bind_desk_with_wifi_request()
     }
     utils_print("%s\n", json_data);
     //save response data
-    PostMemCb out;
-    out.memory = utils_malloc(1);
-    out.size = 0;
-    if(!utils_post_json_data(api_url, json_data, "", &out))
+    char* out = (char*)utils_malloc(1024);
+    if(!utils_post_json_data(api_url, json_data, "", out, 1024))
     {
         utils_print("post data send failed\n");
         goto CLEANUP1;
     } 
-    utils_print("response length is [%s]\n", out.memory);
-    int status_code = hxt_get_reponse_status_code(out.memory);
+    utils_print("response length is [%s]\n", out);
+    int status_code = hxt_get_reponse_status_code(out);
     if (status_code == RESPONSE_OK)
     {
         reported = TRUE;
@@ -764,7 +746,7 @@ BOOL hxt_bind_desk_with_wifi_request()
     } 
 
 CLEANUP1:  
-    utils_free(out.memory);
+    utils_free(out);
     utils_free(json_data);
 CLEANUP2:   
     cJSON_Delete(root);
