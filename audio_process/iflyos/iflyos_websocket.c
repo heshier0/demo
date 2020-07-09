@@ -37,20 +37,21 @@ static void thread_send_pcm_cb(void *data)
         {   
             //send request 
             char *req = iflyos_create_audio_in_request();
-            utils_print("voice request is %s\n", req);
-           //utils_printf("To send request....\n");
+            utils_print("To send request....\n");
             cl->send(cl, req, strlen(req), UWSC_OP_TEXT);
             free(req);
             //send data 
             usleep(100);
-            //utils_printf("To send pcm bin data....\n");
             cl->send(cl, pcm_buf, 640, UWSC_OP_BINARY);
-            
+            utils_print("To send pcm bin data....\n");
+
             if (g_stop_capture)
             {
-                printf("To send END flag !!!!!\n");
-                cl->send(cl, "_END_", strlen("_END_"), UWSC_OP_BINARY);
+                utils_print("To send END flag !!!!!\n");
+                cl->send(cl, "_END_", strlen("_END_"), UWSC_OP_TEXT);
                 g_stop_capture = 0;
+
+                sleep(5);
             }
         }
         usleep(100);
@@ -64,8 +65,6 @@ static void uwsc_onopen(struct uwsc_client *cl)
     uwsc_log_info("onopen\n");
 
     // added by hekai
-    iflyos_init_request();
-
     pthread_t tid;
     pthread_create(&tid, NULL, thread_send_pcm_cb, (void*)cl);
     pthread_detach(tid);
@@ -139,8 +138,7 @@ int iflyos_websocket_start()
     char* device_id = iflyos_get_device_id();
     char* token = iflyos_get_token();
     sprintf(ifly_url, "wss://ivs.iflyos.cn/embedded/v1?token=%s&device_id=%s", token, device_id); 
-    iflyos_free(device_id);
-    iflyos_free(token);
+
     
     cl = uwsc_new(loop, ifly_url, ping_interval, NULL);
     if (!cl)
@@ -157,7 +155,8 @@ int iflyos_websocket_start()
     ev_signal_start(loop, &signal_watcher);
 
     ev_run(loop, 0);
-
     free(cl);       
+    iflyos_unload_cfg();
+
     return 0;
 }

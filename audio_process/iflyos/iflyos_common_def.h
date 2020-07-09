@@ -17,7 +17,7 @@ typedef struct iflyos_header
 {               
     char authorization[80];          //must
     char device_id[20];                 //must
-    char device_ip[16];             
+    char device_ip[32];             
     float latitude;
     float longitude;
     char platform_name[8];             //must

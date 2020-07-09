@@ -13,39 +13,32 @@ static FlyosContext* inited_context;
 
 static void iflyos_create_init_header()
 {
-    inited_header = (FlyosHeader *)malloc(sizeof(FlyosHeader));
-    memset(inited_header, 0, sizeof(FlyosHeader));
+    inited_header = (FlyosHeader *)utils_malloc(sizeof(FlyosHeader));
 
     char* token_type = iflyos_get_token_type();
     char* token = iflyos_get_token();
     strcpy(inited_header->authorization, token_type);
     strcat(inited_header->authorization, " ");
     strcat(inited_header->authorization, token);
-    free(token_type);
-    free(token);
 
     char* device_id = iflyos_get_device_id();
     strcpy(inited_header->device_id, device_id);
-    free(device_id);
 
     char* platform_name = iflyos_get_platform_name();
     strcpy(inited_header->platform_name, platform_name);
-    free(platform_name);
 
     char* platform_version = iflyos_get_platform_version();
     strcpy(inited_header->platform_version, platform_version);
-    free(platform_version);
 }
 
 static void iflyos_create_init_context()
 {
-    inited_context = (FlyosContext *)calloc(sizeof(FlyosContext), 1);
+    inited_context = (FlyosContext *)utils_malloc(sizeof(FlyosContext));
 
     FlyosContextSystem context_system;
     memset(&context_system, 0, sizeof(FlyosContextSystem));
     char* sys_version = iflyos_get_system_version();
     strcpy(context_system.version, sys_version);
-    free(sys_version);
 
     FLyosContextAudioPlayer audio_player;
     memset(&audio_player, 0, sizeof(FLyosContextAudioPlayer));
@@ -53,8 +46,6 @@ static void iflyos_create_init_context()
     char* audio_state = iflyos_get_audio_state();
     strcpy(audio_player.version, audio_version);
     strcpy(audio_player.state, audio_state);
-    free(audio_version);
-    free(audio_state);
 
     FlyosContextSpeaker speaker;
     memset(&speaker, 0, sizeof(FlyosContextSpeaker));
@@ -64,16 +55,14 @@ static void iflyos_create_init_context()
     strcpy(speaker.version, speaker_version);
     strcpy(speaker.type, speaker_type);
     speaker.volume = speaker_vol;
-    free(speaker_version);
-    free(speaker_type);
 
-    inited_context->system = (FlyosContextSystem *)calloc(sizeof(FlyosContextSystem), 1);
+    inited_context->system = (FlyosContextSystem *)utils_malloc(sizeof(FlyosContextSystem));
     memcpy(inited_context->system, &context_system, sizeof(FlyosContextSystem));
     
-    inited_context->audio_player = (FLyosContextAudioPlayer *)calloc(sizeof(FLyosContextAudioPlayer), 1);
+    inited_context->audio_player = (FLyosContextAudioPlayer *)utils_malloc(sizeof(FLyosContextAudioPlayer));
     memcpy(inited_context->audio_player, &audio_player, sizeof(FLyosContextAudioPlayer));
 
-    inited_context->speaker = (FlyosContextSpeaker *)calloc(sizeof(FlyosContextSpeaker), 1);
+    inited_context->speaker = (FlyosContextSpeaker *)utils_malloc(sizeof(FlyosContextSpeaker));
     memcpy(inited_context->speaker, &speaker, sizeof(FlyosContextSpeaker));
 
     return;
@@ -85,7 +74,7 @@ static void iflyos_destroy_header(FlyosHeader* header)
     {
         return;
     }
-    free(header);
+    utils_free(header);
     header = NULL;
 
     return;
@@ -100,23 +89,23 @@ static void iflyos_destroy_context(FlyosContext* context)
    
     if(context->system != NULL)
     {
-        free(context->system);
+        utils_free(context->system);
         context->system = NULL;
     }
     
     if(context->audio_player != NULL)
     {
-        free(context->audio_player);
+        utils_free(context->audio_player);
         context->audio_player = NULL;
     }
 
     if(context->speaker != NULL)
     {
-        free(context->speaker);
+        utils_free(context->speaker);
         context->speaker = NULL;
     }
 
-    free(context);
+    utils_free(context);
     context = NULL;
 
     return;
@@ -192,7 +181,7 @@ static cJSON* iflyos_create_context(FlyosContext* context)
     return root;
 }
 
-void iflyos_init_request()
+static void iflyos_init_request()
 {
     iflyos_create_init_header();
     iflyos_create_init_context();
@@ -208,8 +197,12 @@ char*  iflyos_create_audio_in_request()
 {
     cJSON *root = NULL;
 
+    iflyos_init_request();
+
     cJSON* header_node = iflyos_create_header(inited_header);
     cJSON* context_node = iflyos_create_context(inited_context);
+    
+    
     cJSON* request_node = NULL;
 
     root = cJSON_CreateObject();
@@ -235,6 +228,8 @@ char*  iflyos_create_audio_in_request()
     cJSON_free(header_node);
     cJSON_free(context_node);
     cJSON_free(root);
+
+    iflyos_deinit_request();
     //end test
 
     return request;
@@ -295,7 +290,6 @@ int iflyos_get_audio_data_handle()
         utils_print("pcm fifo open error\n");
         return -1;
     }
-
 
     return fd; 
 }

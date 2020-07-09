@@ -9,7 +9,7 @@
 
 #include "utils.h"
 
-#define MP3_FIFO ("/tmmp/my_mp3_fifo")
+#define MP3_FIFO ("/tmp/my_mp3_fifo")
 
 static char* separate_filename(const char *url)
 {
@@ -306,7 +306,11 @@ BOOL utils_set_cfg_number_value(cJSON* root, const char* cfg, const char* params
 BOOL utils_send_mp3_voice(const char *url)
 {
     char cmd[256] = {0};
+#ifdef DEBUG    
+    sprintf(cmd, "curl --insecure -o %s %s", MP3_FIFO, url);
+#else
     sprintf(cmd, "curl --insecure -s -o %s %s", MP3_FIFO, url);
+#endif   
     pid_t status = system(cmd);
     
     return check_system_cmd_result(status);
@@ -326,7 +330,11 @@ BOOL utils_download_file(const char *url, char *out_buffer, int buffer_length)
     }
 
     char CMD_DOWNLOAD_FILE[512] = {0};
+#ifdef DEBUG
+    sprintf(CMD_DOWNLOAD_FILE, "curl --insecure -o %s %s", filename, url);
+#else
     sprintf(CMD_DOWNLOAD_FILE, "curl --insecure -s -o %s %s", filename, url);
+#endif    
 
     FILE *fp = NULL;
     fp = popen(CMD_DOWNLOAD_FILE, "r");
@@ -360,7 +368,11 @@ BOOL utils_upload_file(const char* url, const char* header, const char* local_fi
     utils_print("upload file name is %s\n", local_file_path);
 
     char CMD_UPLOAD_FILE[512] = {0};
+#ifdef DEBUG
+    sprintf(CMD_UPLOAD_FILE, "curl --insecure -H \"%s\" -F \"file=@%s\" %s", header, local_file_path, url);
+#else
     sprintf(CMD_UPLOAD_FILE, "curl --insecure -s -H \"%s\" -F \"file=@%s\" %s", header, local_file_path, url);
+#endif // DEBUG
 
     FILE *fp = NULL;
     fp = popen(CMD_UPLOAD_FILE, "r");
@@ -388,8 +400,13 @@ BOOL utils_post_json_data(const char *url, const char* header_content, const cha
     }
 
     char CMD_POST_JSON[512] = {0};
+#ifdef DEBUG
+    sprintf(CMD_POST_JSON, "curl --insecure -X POST -H \"Content-Type:application/json;charset=UTF-8\" -H \"%s\" -d \"%s\" %s", 
+                                header_content, json_data, url);
+#else 
     sprintf(CMD_POST_JSON, "curl --insecure -s -X POST -H \"Content-Type:application/json;charset=UTF-8\" -H \"%s\" -d \"%s\" %s", 
                                 header_content, json_data, url);
+#endif // DEBUG
 
     FILE *fp = NULL;
     fp = popen(CMD_POST_JSON, "r");
