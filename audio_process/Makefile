@@ -17,7 +17,9 @@ INCS            = -I$(ROOT_DIR)/. \
                   -I/mnt/g/workspace/plugins/libev/include \
                   -I/mnt/g/workspace/plugins/cjson/include    \
                   -I/mnt/g/workspace/plugins/libuwsc/include \
-		  -I/mnt/g/workspace/plugins/libmbedtls/include
+		          -I/mnt/g/workspace/plugins/libmbedtls/include \
+                  -I/mnt/g/workspace/plugins/libqrcode/include \
+                  -I/mnt/g/workspace/plugins/hisi/include
                   
 
 LIBS            = -L/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/lib -lm -ldl -pthread \
@@ -26,7 +28,10 @@ LIBS            = -L/opt/hisi-linux/x86-arm/arm-himix200-linux/target/usr/lib -l
                   -L/mnt/g/workspace/plugins/libuwsc/lib -luwsc \
                   -L/mnt/g/workspace/plugins/libmbedtls/lib -lmbedx509 \
                   -L/mnt/g/workspace/plugins/libmbedtls/lib -lmbedtls \
-                  -L/mnt/g/workspace/plugins/libmbedtls/lib -lmbedcrypto
+                  -L/mnt/g/workspace/plugins/libmbedtls/lib -lmbedcrypto \
+                  -L/mnt/g/workspace/plugins/libqrcode/lib -lQRCodeDetec \
+                  -L/mnt/g/workspace/plugins/libqrcode/lib -lzbar \
+                  -L/mnt/g/workspace/plugins/hisi/lib 
 		    
 
 CFLAGS          = -DLINUX -DDEBUG -g -Wno-multichar -Wimplicit-function-declaration \
