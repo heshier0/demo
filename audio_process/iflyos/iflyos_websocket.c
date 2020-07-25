@@ -13,6 +13,7 @@
 
 static int g_sampling = 1;
 static int g_stop_capture = 0;
+static const char* g_end_tag = "{\"end\": true}";
 
 static void thread_send_pcm_cb(void *data)
 {
@@ -48,13 +49,13 @@ static void thread_send_pcm_cb(void *data)
             if (g_stop_capture)
             {
                 utils_print("To send END flag !!!!!\n");
-                cl->send(cl, "_END_", strlen("_END_"), UWSC_OP_TEXT);
+                cl->send(cl, g_end_tag, strlen(g_end_tag), UWSC_OP_TEXT);
                 g_stop_capture = 0;
 
                 sleep(5);
             }
         }
-        usleep(100);
+        usleep(500);
     }
 
     close(fd);

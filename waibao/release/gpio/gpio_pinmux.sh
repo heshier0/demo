@@ -1,0 +1,18 @@
+#!/bin/sh
+
+#output
+himm 0x112f0090 0x100  #GPIO0_2 2
+himm 0x112f009c 0x100  #GPIO0_5 5
+himm 0x114f0000 0x100  #GPIO2_4 20
+himm 0x114f0004 0x100  #GPIO2_5 21
+himm 0x114f0008 0x100  #GPIO2_6 22
+himm 0x114f000c 0x100  #GPIO2_7 23
+himm 0x112f006c 0x101  #GPIO9_2 74
+himm 0x112f007c 0x101  #GPIO9_4 78
+himm 0x112f0088 0x101  #GPIO10_1 81
+
+#input
+himm 0x112f0068 0x101 #GPIO9_1 82
+himm 0x112f0070 0x101 #GPIO9_3 84
+
+

@@ -1,0 +1,14 @@
+prefix=/home/wangzheng/hisi/facegate/usr
+exec_prefix=${prefix}
+libdir=/home/wangzheng/hisi/facegate/usr/lib
+includedir=/home/wangzheng/hisi/facegate/usr/include
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 56.55.100
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavutil 
+Libs.private: -pthread -lm
+Cflags: -I${includedir}

@@ -1,0 +1,10 @@
+prefix=/home/wangzheng/hisi/facegate/usr
+exec_prefix=/home/wangzheng/hisi/facegate/usr
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: Mini-XML
+Description: Lightweight XML support library
+Version: 2.12
+Libs: -L${exec_prefix}/lib -lmxml -lpthread
+Cflags: -I${prefix}/include -D_THREAD_SAFE -D_REENTRANT
